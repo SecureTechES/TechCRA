@@ -115,6 +115,7 @@ tr.rS td{background:var(--rS)}
 .qb.cl{background:color-mix(in srgb,var(--ok) 14%,transparent)}
 #undo{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:6px 8px 6px 14px;border-radius:5px;z-index:30;display:flex;gap:12px;align-items:center;box-shadow:0 2px 10px #0006}
 #undo[hidden]{display:none}
+[hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
 </style>
 </head>
@@ -167,6 +168,19 @@ S.forEach(s=>{const mk=(m,c,d,u)=>({t:new Date(NOW-m*6e4),c,d,u:u||'SYS'});
 const TEC=['Javier Molina','Laura Gil','Pablo Ruiz'];let otn=40,pn=1040;
 S.forEach(s=>{s.ot=s.m.map(x=>{const p=x.split('|'),fin=p[2]==='Hecha',tipo=/Cambio|Sustituci/.test(p[0])?'Avería':'Mantenimiento',n=++otn,fact=tipo==='Avería'||(fin&&n%2===0);
  return{id:'OT-2026-'+String(n).padStart(3,'0'),tipo,sub:p[0],desc:p[0]+' en '+s.n,estado:fin?'Cerrada':'Abierta',fecha:p[1],partes:[{id:'P-'+(pn++),tec:TEC[n%3],fecha:p[1],estado:fin?(fact?'Facturado':'Finalizado'):'Pendiente',coment:fin?'Trabajo completado sin incidencias. Se comprueban sirenas, baterías, comunicador y todos los detectores.':'',horas:fin?2:0,desp:{km:fin?24:0,h:fin?0.5:0},fact,pH:45,pD:0.45,mat:fin&&tipo==='Avería'?[['Batería 12V 7Ah',1,22]]:[]}]}})});
+const RECS=[{id:'REC-1',n:'Receptora IP principal',t:'IP · SG-System I'},{id:'REC-2',n:'Receptora IP respaldo',t:'IP · SG-System II'},{id:'REC-3',n:'Receptora GPRS/4G',t:'GPRS · Pasarela móvil'},{id:'REC-4',n:'Línea telefónica Contact ID',t:'PSTN · Tarjeta de línea'}];
+const SYST=['Intrusión','CCTV','Incendio','Control de accesos','Otro'],PROT=['Contact ID','SIA DC-09','CID DC-05 / IP','Voz / otro'],VIAT=['IP','GPRS / 4G','Teléfono (PSTN)'],SUP=['Sin supervisión','Cada 1 hora','Cada 24 horas','Cada 7 días'];
+const viaDef=(c,id,i)=>[...new Set((c||'').split(' + ').map(x=>/GPRS|4G/i.test(x)?'GPRS / 4G':/IP|Ethernet/i.test(x)?'IP':/Tel/i.test(x)?'Teléfono (PSTN)':null).filter(Boolean))].map((tp,j)=>({id:'V-'+(j+1),tipo:tp,ip:tp==='IP'&&i%3===0?'85.62.'+(20+i)+'.14':'',ddns:tp==='IP'&&i%3===1?'abonado'+id+'.ddns.net':'',iccid:tp==='GPRS / 4G'?'89340712'+id.padStart(4,'0')+'0000000':'',tel:tp==='Teléfono (PSTN)'?'91 555 '+id:'',prio:j+1,sup:tp==='IP'?'Cada 1 hora':tp==='Teléfono (PSTN)'?'Cada 7 días':'Cada 24 horas',rec:tp==='IP'?'REC-1':tp==='Teléfono (PSTN)'?'REC-4':'REC-3'}));
+const viaDet=v=>v.tipo==='IP'?((v.ip||v.ddns)?[v.ip&&'IP '+v.ip,v.ddns&&'DDNS '+v.ddns].filter(Boolean).join(' · '):'IP privada / dinámica'):v.tipo==='GPRS / 4G'?'ICCID '+(v.iccid||'—'):'Línea '+(v.tel||'—'),PW={};
+function mkSys(p,c,id,i){const w=(p||'').trim().split(' '),vias=viaDef(c,id,i),ids=[...new Set(vias.map(v=>v.rec))],rm=vias.some(v=>v.tipo==='IP')&&i%2===0;
+ if(vias.some(v=>v.tipo==='IP')&&!ids.includes('REC-2'))ids.push('REC-2');
+ return{id:'SY-1',tipo:'Intrusión',marca:w[0]||'',modelo:w.slice(1).join(' '),cuenta:id,prot:'Contact ID',estado:'Activo',vias,rec:ids.map((r,k)=>({id:r,rol:k?'Respaldo':'Principal'})),rem:rm,rip:rm?'85.60.'+(100+i)+'.'+(10+i):'',rpt:rm?String(7700+i):'',rus:'',rpw:''}}
+function syncSys(s){const m=s.sys.find(x=>x.tipo==='Intrusión'&&x.estado==='Activo')||s.sys.find(x=>x.tipo==='Intrusión');
+ s.panel=m?((m.marca+' '+m.modelo).trim()||'—'):'—';
+ s.com=[...new Set(m?[...m.vias].sort((a,b)=>a.prio-b.prio).map(v=>v.tipo.split(' ')[0]):[])].join(' + ')||'—';
+ s.rc=!!(m&&m.vias.some(v=>v.tipo==='IP'))}
+S.forEach((s,i)=>{s.sys=[mkSys(s.panel,s.com,s.id,i)];
+ if(s.cams)s.sys.push({id:'SY-2',tipo:'CCTV',marca:'Hikvision',modelo:'NVR '+s.cams+' canales',cuenta:'—',prot:'—',estado:'Activo',vias:[],rec:[],rem:false,rip:'88.12.'+(30+i)+'.'+(40+i),rpt:String(8000+i),rus:'cra_view',rpw:'Demo'+s.id})});
 const tdy=()=>new Date().toISOString().slice(0,10),dAdd=d=>new Date(Date.now()+d*864e5).toISOString().slice(0,10),mAdd=(f,m)=>{const d=new Date(f+'T12:00:00');d.setMonth(d.getMonth()+m);return d.toISOString().slice(0,10)},PERM={Mensual:1,Trimestral:3,Semestral:6,Anual:12};let rvn=0;
 S.forEach((s,i)=>{const per=s.t==='Industria'?'Trimestral':s.t==='Comercio'?'Semestral':'Anual';
  s.mt=[{id:'MT-1',sis:'Intrusión · '+s.panel,per}];
@@ -182,11 +196,11 @@ const queue=()=>S.filter(s=>s.st!=='ok'&&s.st!=='susp').sort((a,b)=>a.pri-b.pri)
 const steps=s=>[...(s.cams?['VERIFICAR CÁMARAS DEL ABONADO']:[]),'CONTACTAR CON CLIENTE '+s.c[0][0].toUpperCase()+' AL '+s.c[0][2],'CONTACTAR CON '+(s.c[1]?s.c[1][0].toUpperCase():'CONTACTO 2')+' USANDO LISTA DE LLAMADAS','AVISAR A SERVICIO DE ACUDA / VIGILANTE','REGISTRAR RESOLUCIÓN'];
 const log=(s,c,d,u)=>s.events.unshift({t:new Date(),c,d,u:u||'OP1'});
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
-const MB={Archivo:[['Nuevo abonado','nw'],['Editar ficha…','ed'],['Abrir abonado…','srch'],['Imprimir ficha','print']],Ver:[['Inicio','home'],['Mostrar/ocultar árbol','tree'],['Cambiar tema','theme']],Herramientas:[['Buscar abonado','srch'],['Códigos de resolución…','rcd'],['Configuración PBX…','pcfg'],['Simular llamada entrante','ring'],['Simular pruebas desde app técnica','tsim'],['Simular señal: Robo','sim:1130'],['Simular señal: Incendio','sim:1110'],['Simular señal: Fallo 220V','sim:1301'],['Simular señal: Fallo de comunicación','sim:1350']],Operaciones:[['Siguiente alarma','next'],['Señal manual','man'],['Seguir alarma','trk']],Mantenimiento:[['Poner en pruebas…','tst'],['Mantenimientos contratados','p8'],['Nueva orden de trabajo…','ot'],['Órdenes y partes','p9']],Informes:[['Informe de alarma','p4'],['Informe del abonado','p4']],Ayuda:[['Atajos de teclado','keys'],['Acerca de','about']]};
+const MB={Archivo:[['Nuevo abonado','nw'],['Editar ficha…','ed'],['Abrir abonado…','srch'],['Imprimir ficha','print']],Ver:[['Inicio','home'],['Sistemas y comunicaciones','p11'],['Mostrar/ocultar árbol','tree'],['Cambiar tema','theme']],Herramientas:[['Buscar abonado','srch'],['Receptoras…','rcs'],['Códigos de resolución…','rcd'],['Configuración PBX…','pcfg'],['Simular llamada entrante','ring'],['Simular pruebas desde app técnica','tsim'],['Simular señal: Robo','sim:1130'],['Simular señal: Incendio','sim:1110'],['Simular señal: Fallo 220V','sim:1301'],['Simular señal: Fallo de comunicación','sim:1350']],Operaciones:[['Siguiente alarma','next'],['Señal manual','man'],['Seguir alarma','trk']],Mantenimiento:[['Poner en pruebas…','tst'],['Mantenimientos contratados','p8'],['Nueva orden de trabajo…','ot'],['Órdenes y partes','p9']],Informes:[['Informe de alarma','p4'],['Informe del abonado','p4']],Ayuda:[['Atajos de teclado','keys'],['Acerca de','about']]};
 const AB={Operaciones:[['Siguiente alarma','next'],['Señal manual','man'],['Alarma manual','todo']],Servicio:[['Nueva orden de trabajo','ot'],['Mantenimientos','p8'],['Órdenes y partes','p9']],Hacer:0,Acciones:[['Llamar a contacto 1','c0'],['Llamar a contacto 2','c1'],['Avisar a acuda','acuda'],['Enviar SMS al titular','sms'],['Ver cámaras','p10'],['Seguir alarma','trk']],Suspender:0,Finalizar:0,'En pruebas':0};
 const MENU={};for(const k in MB)MENU['M'+k]=MB[k];for(const k in AB)MENU['A'+k]=AB[k];
 const T1=[['☰','Árbol','tree'],['🏠','Inicio','home'],['📄','Nuevo abonado','nw'],['✏️','Editar ficha','ed'],['📂','Abrir abonado','srch'],['🖨️','Imprimir ficha','print'],['|'],['⏭️','Siguiente alarma','next'],['📞','Llamar a contacto 1','c0'],['🚓','Avisar a acuda','acuda'],['🔔','Señal manual','man'],['⭐','Seguir alarma','trk'],['🛠️','Poner en pruebas','tst'],['☎️','Asistente PBX','pbx'],['🌓','Cambiar tema','theme']];
-const T2=[['🚨','Alarma','p1'],['🗺️','Planes','p2'],['🕒','Horario','p3'],['📋','Informe de alarma','p4'],['💬','Comentarios','p5'],['🛡️','Estado de zonas','p6'],['📡','Canal inverso','p7'],['🗓️','Mantenimientos','p8'],['🔧','Órdenes y partes','p9'],['📹','Cámaras','p10']];
+const T2=[['🚨','Alarma','p1'],['🗺️','Planes','p2'],['🕒','Horario','p3'],['📋','Informe de alarma','p4'],['💬','Comentarios','p5'],['🛡️','Estado de zonas','p6'],['📡','Canal inverso','p7'],['🗓️','Mantenimientos','p8'],['🔧','Órdenes y partes','p9'],['📹','Cámaras','p10'],['🧩','Sistemas','p11']];
 const ib=a=>a.map(x=>x[0]==='|'?'<i class="sep"></i>':`<button class="ib" data-a="${x[2]}" title="${x[1]}" aria-label="${x[1]}">${x[0]}</button>`).join('');
 $('mb').innerHTML=Object.keys(MB).map(k=>`<button data-m="M${k}">${k}</button>`).join('');
 $('t1').innerHTML=ib(T1);$('t2').innerHTML=ib(T2);
@@ -240,7 +254,7 @@ function tree(){
  $('tn').innerHTML=nav==='nav'?h:nav==='notes'?`<textarea id="nt" placeholder="Notas del operador">${esc(notes)}</textarea>`:'<div class="box" style="margin:4px">Sin mensajes instantáneos.</div>';
  document.querySelectorAll('.tt button').forEach(b=>b.classList.toggle('on',b.dataset.nav===nav));
 }
-function pt(){$('pt').style.display=cur?'':'none';$('pt').innerHTML=['Alarma','Planes','Horario','Informe de alarma','Comentarios','Estado de zonas','Canal inverso','Mantenimientos','Órdenes y partes','Cámaras'].map((n,i)=>`<button data-a="p${i+1}" class="${tab===i+1?'on':''}"${!cur||(i===6&&!cur.rc)?' disabled':''}>${n} - ${i+1}</button>`).join('')}
+function pt(){$('pt').style.display=cur?'':'none';$('pt').innerHTML=['Alarma','Planes','Horario','Informe de alarma','Comentarios','Estado de zonas','Canal inverso','Mantenimientos','Órdenes y partes','Cámaras','Sistemas'].map((n,i)=>`<button data-a="p${i+1}" class="${tab===i+1?'on':''}"${!cur||(i===6&&!cur.rc)?' disabled':''}>${n} - ${i+1}</button>`).join('')}
 function foot(){
  const a=S.filter(isA),n=Array(10).fill(0);a.forEach(s=>n[s.pri-1]++);
  const isN=s=>isSig(s)&&!s.vw,isV=s=>isSig(s)&&s.vw,c=(v,w)=>`<span class="c${v?' h':''}" style="min-width:${w||44}px">${v}</span>`;
@@ -281,8 +295,23 @@ function act(k){
  if(k==='radd'){const v=$('rnew').value.trim();if(v&&!RES.includes(v))RES.push(v);return dlgRC()}
  if(k.startsWith('rdel:')){if(RES.length>1)RES.splice(+k.slice(5),1);return dlgRC()}
  if(k==='keys')return dlgKeys();
+ if(k==='rcs')return dlgRecs();
+ if(k==='ecadd'){const a=$('ec_n').value.trim();if(!a)return toast('Escribe el nombre de la receptora');RECS.push({id:'REC-'+(Math.max(...RECS.map(r=>+r.id.slice(4)))+1),n:a,t:$('ec_t').value.trim()||'—'});return dlgRecs()}
+ if(k.startsWith('ecdel:')){const i=RECS.findIndex(r=>r.id===k.slice(6));if(i>=0)RECS.splice(i,1);return dlgRecs()}
  const s=cur;if(!s)return toast('Selecciona primero un abonado');
  if(k==='ed')return dlgEdit(s);
+ if(k.startsWith('pw:')){const y=s.sys.find(z=>z.id===k.slice(3));PW[y.id]=!PW[y.id];if(PW[y.id])log(s,1999,'CREDENCIALES de '+y.tipo+' '+y.marca+' consultadas por OP1');return all()}
+ if(k==='sy+')return dlgSys(s,null);
+ if(k.startsWith('sy:'))return dlgSys(s,s.sys.find(y=>y.id===k.slice(3)));
+ if(k.startsWith('syok:'))return doSys(s,k.slice(5));
+ if(k.startsWith('sq:'))return dlgSQ(s,k.slice(3));
+ if(k.startsWith('sqok:'))return doSQ(s,k.slice(5));
+ if(k.startsWith('vi+:'))return dlgVia(s,s.sys.find(y=>y.id===k.slice(4)),null);
+ if(k.startsWith('vi:')){const q=k.split(':'),y=s.sys.find(z=>z.id===q[1]);return dlgVia(s,y,y.vias.find(z=>z.id===q[2]))}
+ if(k.startsWith('viok:')){const q=k.split(':');return doVia(s,s.sys.find(z=>z.id===q[1]),q[2]==='new'?'':q[2])}
+ if(k.startsWith('viq:')){const q=k.split(':'),y=s.sys.find(z=>z.id===q[1]),v=y.vias.find(z=>z.id===q[2]);y.vias=y.vias.filter(z=>z.id!==q[2]);syncSys(s);log(s,1999,'VÍA retirada de '+y.tipo+' '+y.marca+': '+v.tipo+' ('+viaDet(v)+')');$('dlg').close();toast('Vía quitada');return all()}
+ if(k.startsWith('sr:'))return dlgSR(s,s.sys.find(y=>y.id===k.slice(3)));
+ if(k.startsWith('srok:'))return doSR(s,s.sys.find(y=>y.id===k.slice(5)));
  if(k==='eok')return doEdit(s);
  if(k==='sus')return isA(s)?dlgSus(s):toast('No hay alarma activa');
  if(k==='sok')return doSus(s);
@@ -414,7 +443,7 @@ function dlgEdit(s){const n=!s,d=s||{n:'',a:'',t:'Comercio',panel:'',com:'IP',ca
  dlgOpen(n?'Nuevo abonado':'Editar ficha - '+esc(s.n),`<label>Nombre<input type='text' id='en' value='${esc(d.n)}'></label>
  <label>Dirección (calle, CP ciudad)<input type='text' id='ea' value='${esc(d.a)}'></label>
  <div class='dg'><label>Tipo${sel('et',TIPOS)}</label><label>Cámaras<input type='text' id='ek' value='${d.cams}'></label></div>
- <div class='dg'><label>Central<input type='text' id='ep' value='${esc(d.panel)}'></label><label>Comunicación<input type='text' id='em' value='${esc(d.com)}'></label></div>
+ ${n?`<div class='dg'><label>Central (marca y modelo)<input type='text' id='ep' value='${esc(d.panel)}'></label><label>Comunicación (IP + GPRS…)<input type='text' id='em' value='${esc(d.com)}'></label></div>`:`<p class='hl'>Central y comunicaciones se administran en la pestaña Sistemas.</p>`}
  <label>Zonas (una por línea)<textarea id='ez' rows='4'>${esc(d.z.split('|').join(NL))}</textarea></label>
  <label>Contactos (Nombre; Relación; Teléfono)<textarea id='ec' rows='3'>${esc(d.c.map(c=>c.join('; ')).join(NL))}</textarea></label>`,`<button class='b' data-a='${n?'eok:new':'eok'}'>${n?'Crear abonado':'Guardar cambios'}</button>`);
  $('et').value=d.t}
@@ -424,9 +453,9 @@ function doEdit(s){const v=id=>$(id).value.trim(),n=!s,
  if(!z.length)return toast('Añade al menos una zona');
  if(!c.length)return toast('Añade al menos un contacto (Nombre; Relación; Teléfono)');
  if(n){s={id:String(Math.max(...S.map(x=>+x.id))+1).padStart(4,'0'),st:'ok',ev:[1602,'Alta de abonado'],pri:0,step:0,m:[],ot:[],mt:[],rev:[],cm:[],at:new Date(),events:[{t:new Date(),c:1999,d:'ALTA DE ABONADO',u:'OP1'}]};S.push(s)}
- const old=n?{}:{'nombre':s.n,'dirección':s.a,'tipo':s.t,'central':s.panel,'comunicación':s.com,'cámaras':s.cams,'zonas':s.z,'contactos':JSON.stringify(s.c)};
- s.n=v('en');s.a=v('ea');s.t=$('et').value;s.panel=v('ep')||'—';s.com=v('em')||'—';s.cams=Math.max(0,parseInt(v('ek'))||0);s.z=z.join('|');s.c=c;s.rc=/IP|Ethernet/.test(s.com);
- if(!n){const nw={'nombre':s.n,'dirección':s.a,'tipo':s.t,'central':s.panel,'comunicación':s.com,'cámaras':s.cams,'zonas':s.z,'contactos':JSON.stringify(s.c)},ch=Object.keys(nw).filter(x=>String(nw[x])!==String(old[x]));
+ const old=n?{}:{'nombre':s.n,'dirección':s.a,'tipo':s.t,'cámaras':s.cams,'zonas':s.z,'contactos':JSON.stringify(s.c)};
+ s.n=v('en');s.a=v('ea');s.t=$('et').value;s.cams=Math.max(0,parseInt(v('ek'))||0);s.z=z.join('|');s.c=c;if(n){s.sys=[mkSys(v('ep'),v('em'),s.id,S.length)];syncSys(s)}
+ if(!n){const nw={'nombre':s.n,'dirección':s.a,'tipo':s.t,'cámaras':s.cams,'zonas':s.z,'contactos':JSON.stringify(s.c)},ch=Object.keys(nw).filter(x=>String(nw[x])!==String(old[x]));
   if(!ch.length){$('dlg').close();return toast('Sin cambios')}
   s.mod={by:'OP1',at:new Date(),f:ch};log(s,1999,'FICHA MODIFICADA por OP1 - campos: '+ch.join(', '))}
  $('dlg').close();toast(n?'Abonado creado':'Ficha guardada');if(n)openC(s.id);else all()}
@@ -522,6 +551,63 @@ function qclose(s,i){const q=(QC[CODES[s.ev[0]][1]]||[])[i];if(!q||!isA(s)||s.pr
  clearTimeout(qclose.h);qclose.h=setTimeout(()=>{u.hidden=true;UD=null},8000);all()}
 function undo(){if(!UD)return;const s=S.find(x=>x.id===UD.id);Object.assign(s,{st:UD.st,step:UD.step,vw:UD.vw,susp:UD.susp});
  log(s,1999,'CIERRE RÁPIDO DESHECHO por el operador');UD=null;$('undo').hidden=true;toast('Cierre deshecho');all()}
+P[11]=s=>{const rn=id=>{const r=RECS.find(x=>x.id===id);return r?esc(r.n):'<i>Sin receptora</i>'};
+ return`<fieldset><legend>Sistemas y comunicaciones</legend><p><button class='b' data-a='sy+'>Añadir sistema</button> <button class='b' data-a='rcs'>Receptoras…</button></p></fieldset>`+(s.sys.map(y=>{const cc=y.tipo==='CCTV';return`<fieldset><legend>${esc(y.tipo)} · ${esc((y.marca+' '+y.modelo).trim()||'—')}${y.estado!=='Activo'?' · '+y.estado:''}</legend>
+ ${cc?`<p>Acceso al grabador por IP pública: <b>${esc(y.rip)}</b> · Puerto <b>${esc(y.rpt)}</b> · Usuario <b>${esc(y.rus)}</b> · Contraseña <b>${PW[y.id]?esc(y.rpw||'(vacía)'):'••••••'}</b> <button class='b' data-a='pw:${y.id}'>${PW[y.id]?'Ocultar':'Ver'}</button></p>`
+ :`<p class='hl'>Cuenta ${esc(y.cuenta)} · Protocolo ${esc(y.prot)}</p>${y.tipo==='Intrusión'?`<p>Acceso remoto bidireccional por IP: <b>${y.rem?'Sí · '+esc(y.rip)+':'+esc(y.rpt):'No'}</b></p>`:''}
+ <div class='tw'><table><tr><th>Prio.</th><th>Vía</th><th>Detalle</th><th>Supervisión</th><th>Receptora</th><th></th></tr>${[...y.vias].sort((a,b)=>a.prio-b.prio).map(v=>`<tr><td>${v.prio}</td><td>${v.tipo}</td><td>${esc(viaDet(v))}</td><td>${v.sup}</td><td>${rn(v.rec)}</td><td><button class='b' data-a='vi:${y.id}:${v.id}'>Editar</button></td></tr>`).join('')||'<tr><td colspan=6>Sin vías de comunicación.</td></tr>'}</table></div>
+ <p><b>Receptoras asociadas:</b> ${y.rec.length?y.rec.map(r=>rn(r.id)+' ('+r.rol+')').join(' · '):'<i>ninguna</i>'}</p>`}
+ <p><button class='b' data-a='sy:${y.id}'>Editar sistema</button>${cc?'':` <button class='b' data-a='vi+:${y.id}'>Añadir vía</button> <button class='b' data-a='sr:${y.id}'>Receptoras del sistema</button>`} <button class='b' data-a='sq:${y.id}'>Quitar sistema</button></p></fieldset>`}).join('')||`<div class='box'>Sin sistemas registrados.</div>`)};
+function dlgSys(s,y){const n=!y,d=y||{tipo:'Intrusión',marca:'',modelo:'',cuenta:s.id,prot:'Contact ID',estado:'Activo',rem:false,rip:'',rpt:'',rus:'',rpw:''};
+ dlgOpen((n?'Nuevo sistema':'Editar sistema')+' · '+esc(s.n),`<div class='dg'><label>Tipo${sel('sy_t',SYST)}</label><label>Estado${sel('sy_e',['Activo','Baja'])}</label></div><div class='dg'><label>Marca<input type='text' id='sy_m' value='${esc(d.marca)}'></label><label>Modelo<input type='text' id='sy_o' value='${esc(d.modelo)}'></label></div>
+ <div class='dg sf_rc'><label>Cuenta en receptora<input type='text' id='sy_c' value='${esc(d.cuenta)}'></label><label>Protocolo${sel('sy_p',PROT)}</label></div>
+ <label class='ck sf_in'><input type='checkbox' id='sy_r'${d.rem?' checked':''}> Acceso remoto bidireccional por IP (tiene IP pública)</label>
+ <div class='dg sf_ip'><label>IP pública<input type='text' id='sy_i' value='${esc(d.rip)}'></label><label>Puerto<input type='text' id='sy_pt' inputmode='numeric' value='${esc(d.rpt)}'></label></div>
+ <div class='dg sf_cc'><label>Usuario del grabador<input type='text' id='sy_u' value='${esc(d.rus)}'></label><label>Contraseña<input type='password' id='sy_w' value='${esc(d.rpw)}'></label></div>`,`<button class='b' data-a='syok:${n?'new':y.id}'>Guardar sistema</button>`);
+ $('sy_t').value=d.tipo;$('sy_e').value=d.estado;$('sy_p').value=d.prot;sysFields()}
+function sysFields(){const t=$('sy_t').value,cc=t==='CCTV',rem=t==='Intrusión'&&$('sy_r').checked;
+ document.querySelectorAll('.sf_rc').forEach(e=>e.hidden=cc);
+ document.querySelectorAll('.sf_in').forEach(e=>e.hidden=t!=='Intrusión');
+ document.querySelectorAll('.sf_ip').forEach(e=>e.hidden=!(cc||rem));
+ document.querySelectorAll('.sf_cc').forEach(e=>e.hidden=!cc)}
+function doSys(s,id){const v=x=>$(x).value.trim(),ipok=a=>/^\d{1,3}(\.\d{1,3}){3}$/.test(a)&&a.split('.').every(o=>+o<256),ptok=a=>/^\d+$/.test(a)&&+a>0&&+a<65536;
+ let y=s.sys.find(z=>z.id===id);const n=!y,t=v('sy_t'),cc=t==='CCTV',rem=t==='Intrusión'&&$('sy_r').checked;
+ if(!v('sy_m')&&!v('sy_o'))return toast('Indica marca o modelo');
+ if((cc||rem)&&!ipok(v('sy_i')))return toast('Indica una IP pública válida');
+ if((cc||rem)&&!ptok(v('sy_pt')))return toast('Indica un puerto válido (1-65535)');
+ if(cc&&!v('sy_u'))return toast('Indica el usuario de acceso al grabador');
+ if(n){y={id:'SY-'+(s.sys.length?Math.max(...s.sys.map(z=>+z.id.slice(3)))+1:1),vias:[],rec:[]};s.sys.push(y)}
+ Object.assign(y,{tipo:t,estado:v('sy_e'),marca:v('sy_m'),modelo:v('sy_o'),cuenta:cc?'—':(v('sy_c')||s.id),prot:cc?'—':v('sy_p'),rem,rip:cc||rem?v('sy_i'):'',rpt:cc||rem?v('sy_pt'):'',rus:cc?v('sy_u'):'',rpw:cc?$('sy_w').value:''});
+ syncSys(s);log(s,1999,'SISTEMA '+(n?'añadido':'modificado')+': '+y.tipo+' '+y.marca+' '+y.modelo+(cc||rem?' - acceso remoto '+y.rip+':'+y.rpt:'')+' - '+y.estado);$('dlg').close();toast('Sistema guardado');all()}
+function dlgSQ(s,id){const y=s.sys.find(z=>z.id===id);dlgOpen('Quitar sistema',`<p>¿Quitar el sistema «${esc(y.tipo)} ${esc(y.marca)} ${esc(y.modelo)}» y todas sus vías de comunicación?</p>`,`<button class='b' data-a='sqok:${id}'>Quitar sistema</button>`)}
+function doSQ(s,id){const y=s.sys.find(z=>z.id===id);s.sys=s.sys.filter(z=>z.id!==id);syncSys(s);log(s,1999,'SISTEMA retirado: '+y.tipo+' '+y.marca+' '+y.modelo);$('dlg').close();toast('Sistema quitado');all()}
+function dlgVia(s,y,v){const n=!v,d=v||{tipo:'IP',ip:'',ddns:'',iccid:'',tel:'',prio:y.vias.length+1,sup:'Cada 24 horas',rec:''};
+ dlgOpen((n?'Nueva vía':'Editar vía')+' · '+esc(y.tipo)+' '+esc(y.marca),`<div class='dg'><label>Tipo de vía${sel('vi_t',VIAT)}</label><label>Prioridad${sel('vi_p',['1','2','3','4'])}</label></div>
+ <div class='dg vf_ip'><label>IP pública de la red (si tiene)<input type='text' id='vi_ip' value='${esc(d.ip)}'></label><label>DDNS (si tiene)<input type='text' id='vi_dd' value='${esc(d.ddns)}'></label></div>
+ <label class='vf_gp'>ICCID de la SIM<input type='text' id='vi_ic' inputmode='numeric' value='${esc(d.iccid)}'></label>
+ <label class='vf_tl'>Nº de línea telefónica<input type='text' id='vi_tl' value='${esc(d.tel)}'></label>
+ <div class='dg'><label>Supervisión (test periódico)${sel('vi_s',SUP)}</label><label>Receptora${sel('vi_r',['Sin receptora',...RECS.map(r=>r.n)])}</label></div>`,
+ `<button class='b' data-a='viok:${y.id}:${n?'new':v.id}'>Guardar vía</button>${n?'':`<button class='b' data-a='viq:${y.id}:${v.id}'>Quitar vía</button>`}`);
+ $('vi_t').value=d.tipo;$('vi_p').value=String(d.prio);$('vi_s').value=d.sup;$('vi_r').selectedIndex=RECS.findIndex(r=>r.id===d.rec)+1;viaFields()}
+function viaFields(){const t=$('vi_t').value;
+ document.querySelectorAll('.vf_ip').forEach(e=>e.hidden=t!=='IP');
+ document.querySelectorAll('.vf_gp').forEach(e=>e.hidden=t!=='GPRS / 4G');
+ document.querySelectorAll('.vf_tl').forEach(e=>e.hidden=t!=='Teléfono (PSTN)')}
+function doVia(s,y,id){const g=x=>$(x).value.trim(),tp=g('vi_t'),ic=g('vi_ic').replace(/ /g,''),ip=g('vi_ip');
+ if(tp==='GPRS / 4G'&&!/^\d{18,22}$/.test(ic))return toast('El ICCID debe tener entre 18 y 22 dígitos');
+ if(tp==='IP'&&ip&&!(/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)&&ip.split('.').every(o=>+o<256)))return toast('La IP pública no es válida');
+ if(tp==='Teléfono (PSTN)'&&!g('vi_tl'))return toast('Indica el número de línea');
+ let v=y.vias.find(z=>z.id===id);const n=!v;if(n){v={id:'V-'+(y.vias.length?Math.max(...y.vias.map(z=>+z.id.slice(2)))+1:1)};y.vias.push(v)}
+ const ri=$('vi_r').selectedIndex;
+ Object.assign(v,{tipo:tp,ip:tp==='IP'?ip:'',ddns:tp==='IP'?g('vi_dd'):'',iccid:tp==='GPRS / 4G'?ic:'',tel:tp==='Teléfono (PSTN)'?g('vi_tl'):'',prio:+g('vi_p'),sup:g('vi_s'),rec:ri?RECS[ri-1].id:''});
+ if(v.rec&&!y.rec.some(r=>r.id===v.rec))y.rec.push({id:v.rec,rol:y.rec.length?'Respaldo':'Principal'});
+ syncSys(s);log(s,1999,'VÍA '+(n?'añadida':'modificada')+' en '+y.tipo+' '+y.marca+': '+v.tipo+' ('+viaDet(v)+') prio '+v.prio+' - '+v.sup);$('dlg').close();toast('Vía guardada');all()}
+function dlgSR(s,y){dlgOpen('Receptoras del sistema · '+esc(y.tipo)+' '+esc(y.marca),`<p class='hl'>Marca las receptoras que reciben las señales de este sistema y su papel.</p>${RECS.map((r,i)=>{const a=y.rec.find(x=>x.id===r.id),rs=a&&a.rol==='Respaldo';return`<div style='display:flex;gap:8px;align-items:center'><input type='checkbox' class='sr_c' value='${r.id}' id='sr${i}'${a?' checked':''}><label for='sr${i}' style='flex:1;display:block'>${esc(r.n)}<br><span class='hl'>${esc(r.t)}</span></label><select class='sr_r'><option${rs?'':' selected'}>Principal</option><option${rs?' selected':''}>Respaldo</option></select></div>`}).join('')}`,`<button class='b' data-a='srok:${y.id}'>Guardar</button>`)}
+function doSR(s,y){const cs=[...document.querySelectorAll('.sr_c')],rl=[...document.querySelectorAll('.sr_r')],n=cs.map((c,i)=>c.checked?{id:c.value,rol:rl[i].value}:null).filter(Boolean);
+ if(n.length&&!n.some(r=>r.rol==='Principal'))return toast('Debe haber una receptora principal');
+ y.rec=n;y.vias.forEach(v=>{if(v.rec&&!n.some(r=>r.id===v.rec))v.rec=''});
+ log(s,1999,'RECEPTORAS de '+y.tipo+' '+y.marca+': '+(n.map(r=>(RECS.find(x=>x.id===r.id)||{n:r.id}).n+' ('+r.rol+')').join(', ')||'ninguna'));$('dlg').close();toast('Receptoras guardadas');all()}
+function dlgRecs(){dlgOpen('Receptoras',`<p class='hl'>Receptoras de la CRA que se pueden asociar a los sistemas de los abonados.</p>${RECS.map(r=>{const u=S.reduce((a,x)=>a+x.sys.filter(y=>y.rec.some(q=>q.id===r.id)).length,0);return`<div style='display:flex;gap:8px;align-items:center'><span style='flex:1'><b>${esc(r.n)}</b><br><span class='hl'>${esc(r.t)} · en uso en ${u} sistemas</span></span><button class='b' data-a='ecdel:${r.id}'${u?' disabled':''}>Quitar</button></div>`}).join('')}<div class='dg'><label>Nombre<input type='text' id='ec_n'></label><label>Tipo / detalle<input type='text' id='ec_t'></label></div>`,`<button class='b' data-a='ecadd'>Añadir receptora</button><button class='b' data-a='x'>Cerrar</button>`,1)}
 function pop(b){const p=$('pop'),it=MENU[b.dataset.m];if(!p.hidden&&p.dataset.o===b.dataset.m){p.hidden=true;return}
  p.innerHTML=it.map(x=>`<button data-a="${x[1]}">${x[0]}</button>`).join('');p.dataset.o=b.dataset.m;p.hidden=false;
  const r=b.getBoundingClientRect();p.style.left=Math.max(0,Math.min(r.left,innerWidth-p.offsetWidth-4))+'px';p.style.top=r.bottom+'px'}
@@ -535,6 +621,8 @@ document.addEventListener('click',e=>{
  if(b.dataset.nav){nav=b.dataset.nav;return tree()}
  if(b.dataset.a)act(b.dataset.a)});
 document.addEventListener('change',e=>{const d=e.target.dataset;
+ if(e.target.id==='sy_t'||e.target.id==='sy_r')sysFields();
+ if(e.target.id==='vi_t')viaFields();
  if(d.v){view=d.v;$('pg').innerHTML=pg()}
  if(d.sp){span=d.sp;$('pg').innerHTML=pg()}
  if(e.target.id==='wr'){wrap=e.target.checked;$('pg').innerHTML=pg()}});
