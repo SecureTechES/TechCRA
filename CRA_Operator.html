@@ -99,6 +99,22 @@ dialog h3{margin:0;background:linear-gradient(#2c5fb3,#1a428a);color:#fff;paddin
 #ring[hidden]{display:none}
 .tg{background:var(--wa);color:#000;padding:0 8px;border-radius:3px;font-weight:600}
 tr.rS td{background:var(--rS)}
+
+.qa{display:grid;gap:8px;margin:8px 0 10px}
+.qr{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ql{flex:0 0 100%;color:var(--mu);font-size:12px}
+.qa button{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:4px 12px;background:var(--bg);border:1px solid var(--ln);border-radius:4px}
+.qa button:hover:not(:disabled){background:var(--hd)}
+.qa button:disabled{opacity:.4;cursor:default}
+.qa i{font-style:normal;font-size:16px;line-height:1}
+.qa .nx{flex:1;min-width:0;border:2px solid var(--sel);font-weight:600;justify-content:flex-start}
+.qa .nx span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qa .fn{border:2px solid var(--ok)}
+.qg{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.qb{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;padding:6px;border-radius:5px;border:1px solid var(--ln)}
+.qb.cl{background:color-mix(in srgb,var(--ok) 14%,transparent)}
+#undo{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:6px 8px 6px 14px;border-radius:5px;z-index:30;display:flex;gap:12px;align-items:center;box-shadow:0 2px 10px #0006}
+#undo[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
 </style>
 </head>
@@ -126,6 +142,7 @@ tr.rS td{background:var(--rS)}
 </div>
 <dialog id='dlg'></dialog>
 <div class="pop" id="pop" hidden></div>
+<div id='undo' hidden></div>
 <div id="toast" role="status"></div>
 <script>
 const ST={alarm:'Alarma',proc:'En gestión',aver:'Avería',com:'Sin comunicación',susp:'Suspendida',ok:'Normal'};
@@ -182,7 +199,7 @@ function pg(){
 }
 const P={};
 P[1]=s=>{const al=isA(s),act=s.st==='proc',ar=s.events.find(e=>e.c===3401||e.c===1401),ar2=s.events.find(e=>(e.c===3401||e.c===1401)&&e!==ar),ad=s.a.split(', '),st=steps(s),k=act?s.step:0;
- const kv=(a,b)=>`<dt>${a}</dt><dd>${b}</dd>`,dr=(c,l,v)=>`<tr><td><i class="dt" style="--c:${c}"></i>${l}</td><td>${v}</td></tr>`,area=(n,e)=>e?dr(e.c===3401?'var(--bl)':'var(--wa)','Área '+n,(e.c===3401?'Cerrada - ':'Abierta - ')+fmt(e.t)):'';
+ const qa=quick(s),kv=(a,b)=>`<dt>${a}</dt><dd>${b}</dd>`,dr=(c,l,v)=>`<tr><td><i class="dt" style="--c:${c}"></i>${l}</td><td>${v}</td></tr>`,area=(n,e)=>e?dr(e.c===3401?'var(--bl)':'var(--wa)','Área '+n,(e.c===3401?'Cerrada - ':'Abierta - ')+fmt(e.t)):'';
  const lim=span==='w'?6048e5:2592e6,ev=s.events.filter(e=>NOW-e.t<lim);
  const apT=al?st.map((x,i)=>`<tr class="${i<k?'dn':i===k?'cu':'pn'}"><td style="width:34px;text-align:center">${i<k?'✓':i===k?'➜':'●'}</td><td style="white-space:normal">${x}</td></tr>`).join(''):'<tr><td colspan="2">Sin acciones pendientes.</td></tr>';
  const ctT=s.c.map(c=>`<tr><td>${esc(c[0])}</td><td>${c[1]}</td><td>${c[2]}</td><td><button class='b' data-a='dial:${c[2]}|${esc(c[0])}'>Llamar</button></td></tr>`).join('');
@@ -193,7 +210,7 @@ P[1]=s=>{const al=isA(s),act=s.st==='proc',ar=s.events.find(e=>e.c===3401||e.c==
  <fieldset><legend>Datos de la alarma</legend><div class="fl"><span class="ico">🚨</span><div style="flex:1"><div class="yt"${al?'':' style="background:var(--hd)"'}>${al?CODES[s.ev[0]][0]:'Sin alarma'}</div><dl class="kv">${al?kv('Prioridad',s.pri+' &nbsp; Hora: '+fmt(s.at)):''}${kv('Sistema','1 - '+s.panel)}${kv('Área','1 - Área por defecto')}${kv('Zona',al?esc(s.ev[1]):'—')}${kv('Tx','1 - '+s.com)}</dl></div></div></fieldset></div>
  <div><div class="box"><table>${dr(al?CL[s.st]:'var(--ok)','Alarma',al?(act?'En gestión (1)':s.st==='susp'&&s.susp?'Suspendida hasta '+(s.susp.until?hm(s.susp.until):'cancelación manual')+' · '+esc(s.susp.reason):ST[s.st]+' (1)'):'Sin alarmas')}${tOn(s)?dr('var(--wa)','Monitorización','EN PRUEBAS ('+s.test.origin+') - '+esc(s.test.reason)):dr('var(--ok)','Monitorización','Activa - '+s.t+' - Cuenta principal')}${dr('var(--ok)','Zona horaria','Europe/Madrid')}${dr('var(--ok)','Servicio','Completo')}<tr><td colspan="2"><b>Teléfonos</b></td></tr>${area(1,ar)}${area(2,ar2)}</table></div>
  <fieldset style="margin-top:6px"><legend>Patrón de acción - ${esc(s.n.split(' ')[0].toUpperCase())}</legend><div>${[['ap','Patrón de acción'],['ct','Ver todos los contactos'],['cl','Ver todas las listas de llamadas']].map(([v,l])=>`<label style="margin-right:12px;white-space:nowrap"><input type="radio" name="v" data-v="${v}"${view===v?' checked':''}> ${l}</label>`).join('')}</div><div class="tw" style="margin-top:4px"><table>${view==='ap'?apT:view==='ct'?ctT:clT}</table></div></fieldset></div></div>
- <fieldset><legend>Registro del abonado</legend><div class="fl"><div style="min-width:80px"><label><input type="radio" name="sp" data-sp="w"${span==='w'?' checked':''}> Semana</label><br><label><input type="radio" name="sp" data-sp="m"${span==='m'?' checked':''}> Mes</label><br><button class="b" style="margin-top:6px" disabled>Más</button></div>
+ ${qa}<fieldset><legend>Registro del abonado</legend><div class="fl"><div style="min-width:80px"><label><input type="radio" name="sp" data-sp="w"${span==='w'?' checked':''}> Semana</label><br><label><input type="radio" name="sp" data-sp="m"${span==='m'?' checked':''}> Mes</label><br><button class="b" style="margin-top:6px" disabled>Más</button></div>
  <div class="tw lg${wrap?' wr':''}" style="flex:1"><table><tr><th>Fecha</th><th>Hora</th><th>Descripción</th><th>Usuario</th></tr>${ev.map((e,i)=>{const ty=CODES[e.c][1];return`<tr class="${ty==='proc'?'rG':ty==='ok'?'':i===0&&al&&!e.d.includes('OMITIDA')?'rA':'rS'}"><td>${ty==='proc'?'':dmy(e.t)}</td><td>${hms(e.t)}</td><td>${ty==='proc'?esc(e.d):(ty==='ok'?'SEÑAL':'ALARMA')+' - '+CODES[e.c][0]+' ['+e.c+'] '+esc(e.d)}</td><td>${e.u}</td></tr>`}).join('')}</table></div></div></fieldset>`};
 P[2]=s=>`<fieldset><legend>Planes y planos</legend><div class="box" style="aspect-ratio:16/9;max-height:320px;position:relative;background-image:repeating-linear-gradient(0deg,transparent 0 23px,#8883 23px 24px),repeating-linear-gradient(90deg,transparent 0 23px,#8883 23px 24px)">${s.z.split('|').map((z,i)=>`<span class="dt" title="${esc(z)}" style="position:absolute;left:${8+i*15%80}%;top:${12+i*37%70}%;--c:${zs(s,i)?'var(--al)':'var(--ok)'}"></span>`).join('')}</div><p style="color:var(--mu)">Aquí se integrará tu visor de planos con detectores, expansores, cámaras y fuentes.</p></fieldset>`;
 P[3]=s=>{const r=s.t==='Industria'?[['Lun-Sáb','06:00','22:00'],['Domingo','Cerrado','']]:s.t==='Comercio'||s.t==='Oficina'?[['Lun-Vie','08:30','20:30'],['Sábado','09:00','14:00'],['Domingo','Cerrado','']]:[['Todos los días','Sin horario','']];
@@ -223,7 +240,7 @@ function tree(){
  $('tn').innerHTML=nav==='nav'?h:nav==='notes'?`<textarea id="nt" placeholder="Notas del operador">${esc(notes)}</textarea>`:'<div class="box" style="margin:4px">Sin mensajes instantáneos.</div>';
  document.querySelectorAll('.tt button').forEach(b=>b.classList.toggle('on',b.dataset.nav===nav));
 }
-function pt(){$('pt').innerHTML=['Alarma','Planes','Horario','Informe de alarma','Comentarios','Estado de zonas','Canal inverso','Mantenimientos','Órdenes y partes','Cámaras'].map((n,i)=>`<button data-a="p${i+1}" class="${tab===i+1?'on':''}"${!cur||(i===6&&!cur.rc)?' disabled':''}>${n} - ${i+1}</button>`).join('')}
+function pt(){$('pt').style.display=cur?'':'none';$('pt').innerHTML=['Alarma','Planes','Horario','Informe de alarma','Comentarios','Estado de zonas','Canal inverso','Mantenimientos','Órdenes y partes','Cámaras'].map((n,i)=>`<button data-a="p${i+1}" class="${tab===i+1?'on':''}"${!cur||(i===6&&!cur.rc)?' disabled':''}>${n} - ${i+1}</button>`).join('')}
 function foot(){
  const a=S.filter(isA),n=Array(10).fill(0);a.forEach(s=>n[s.pri-1]++);
  const isN=s=>isSig(s)&&!s.vw,isV=s=>isSig(s)&&s.vw,c=(v,w)=>`<span class="c${v?' h':''}" style="min-width:${w||44}px">${v}</span>`;
@@ -246,6 +263,7 @@ function act(k){
  if(k==='print')return print();
  if(k==='srch'){document.body.classList[innerWidth<=820?'add':'remove']('tr');nav='nav';tree();return $('q').focus()}
  if(k==='next'){const n=queue()[0];return n?openC(n.id):toast('No hay alarmas pendientes')}
+ if(k==='undo')return undo();
  if(k==='home'){cur=null;otSel=null;tab=1;return all()}
  if(k==='x')return $('dlg').close();
  if(k==='pbx'){document.body.classList[innerWidth<=820?'add':'remove']('tr');nav='nav';tree();return $('pn').focus()}
@@ -287,6 +305,7 @@ function act(k){
  if(k.startsWith('pok:'))return doPEdit(s,o,k.slice(4));
  if(k==='sund'){unsus(s,'cancelada');$('dlg').close();toast('Suspensión cancelada');return all()}
  if(k==='fin')return isA(s)?dlgRes(s):toast('No hay alarma activa');
+ if(k.startsWith('qc:'))return qclose(s,+k.slice(3));
  if(k==='tst')return dlgTest(s);
  if(k==='rok')return doRes(s);
  if(k==='tok')return doTest(s);
@@ -486,6 +505,23 @@ function home(){const q=queue(),now=Date.now(),mn=d=>Math.max(0,Math.round((now-
  return`<fieldset><legend>Resumen del turno · ${dmy(new Date())}</legend><div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px'>${cards.map(c=>`<div class='box'><div style='font-size:26px;font-weight:700${c[0]==='En cola'&&c[1]?';color:var(--al)':''}'>${c[1]}</div>${c[0]}</div>`).join('')}</div></fieldset>
  <fieldset><legend>Cola de alarmas</legend><div class='tw'><table><tr><th>P</th><th>Abonado</th><th>Evento</th><th>Detalle</th><th>Hora</th><th>Espera</th><th>Estado</th><th></th></tr>${q.map(s=>`<tr class='${s.pri<=2?'rS':''}'><td>${s.pri}</td><td>${s.id} - ${esc(s.n)}</td><td>${CODES[s.ev[0]][0]}</td><td>${esc(s.ev[1])}</td><td>${hm(s.at)}</td><td>${mn(s.at)} min</td><td>${ST[s.st]}${s.vw?'':' · nueva'}</td><td><button class='b' data-id='${s.id}'>Abrir</button></td></tr>`).join('')||'<tr><td colspan=8>Sin alarmas pendientes.</td></tr>'}</table></div></fieldset>
  <fieldset><legend>Avisos</legend>${av.map(a=>`<div style='display:flex;gap:8px;align-items:center;margin-bottom:3px'><span style='flex:1'>${esc(a[0].n)} · ${esc(a[1])}</span><button class='b' data-id='${a[0].id}'>Abrir</button></div>`).join('')||`<p class='hl'>Sin avisos pendientes.</p>`}</fieldset>`}
+const QC={aver:[['Restablecida','Restablecido - sin incidencia'],['Avería a técnico','Avería técnica en seguimiento'],['Prueba técnico','Pruebas del técnico']]};QC.com=QC.aver;
+let UD=null;
+function quick(s){const al=isA(s),st=steps(s),ty=CODES[s.ev[0]][1],qc=al&&s.pri>2?QC[ty]||[]:[],run=s.st==='proc',
+ lab=run?(s.step<st.length?'Paso '+(s.step+1)+'/'+st.length+': '+st[s.step]:'Patrón completo: usa Finalizar'):'Tomar alarma',
+ b=(a,i,t,x,tt,dis)=>`<button data-a='${a}' class='${x||''}'${dis?' disabled':''} title='${esc(tt||t)}'><i>${i}</i><span>${t}</span></button>`;
+ return`<div class='qa'>
+ <div class='qr'>${b('do','▶',esc(lab),'nx',lab,!al)}</div>
+ <div class='qg'><div class='qb'><span class='ql'>Contactar</span>${s.c.slice(0,3).map((c,i)=>b('c'+i,'📞',esc(c[0].split(' ')[0]),'','Llamar a '+c[0]+' · '+c[1]+' · '+c[2])).join('')}${b('acuda','🚓','Acuda','','Avisar a servicio de acuda',!al)}${b('p10','📹','Cámaras','',s.cams?s.cams+' cámaras':'Sin cámaras',!s.cams)}</div>
+ <div class='qb'><span class='ql'>Gestión</span>${b('sus','⏸',s.st==='susp'?'Reactivar':'Suspender','','Aplazar la alarma',!al)}${b('tst','🛠','En pruebas','','Poner el abonado en pruebas')}${b('trk','⭐',s.tr?'Dejar de seguir':'Seguir','','Seguimiento de la alarma',!al)}</div>
+ <div class='qb cl'><span class='ql'>Cerrar</span>${qc.map((q,i)=>b('qc:'+i,'✔',q[0],'',q[1]+' (cierre rápido, se puede deshacer)')).join('')}${b('fin','✔','Finalizar…','fn','Cerrar con código de resolución',!al)}${al&&!qc.length?`<small class='hl'>Prioridad alta: cierre con resolución</small>`:''}</div></div></div>`}
+function qclose(s,i){const q=(QC[CODES[s.ev[0]][1]]||[])[i];if(!q||!isA(s)||s.pri<=2)return;
+ UD={id:s.id,st:s.st,step:s.step,vw:s.vw,susp:s.susp};
+ s.st='ok';s.step=0;s.susp=null;log(s,1999,'RESOLUCIÓN - '+CODES[s.ev[0]][0]+' - Res: '+q[1]+' - Cierre rápido');
+ const u=$('undo');u.hidden=false;u.innerHTML=`<span>Cerrada: ${esc(q[0])} · ${esc(s.n)}</span><button class='b' data-a='undo'>Deshacer</button>`;
+ clearTimeout(qclose.h);qclose.h=setTimeout(()=>{u.hidden=true;UD=null},8000);all()}
+function undo(){if(!UD)return;const s=S.find(x=>x.id===UD.id);Object.assign(s,{st:UD.st,step:UD.step,vw:UD.vw,susp:UD.susp});
+ log(s,1999,'CIERRE RÁPIDO DESHECHO por el operador');UD=null;$('undo').hidden=true;toast('Cierre deshecho');all()}
 function pop(b){const p=$('pop'),it=MENU[b.dataset.m];if(!p.hidden&&p.dataset.o===b.dataset.m){p.hidden=true;return}
  p.innerHTML=it.map(x=>`<button data-a="${x[1]}">${x[0]}</button>`).join('');p.dataset.o=b.dataset.m;p.hidden=false;
  const r=b.getBoundingClientRect();p.style.left=Math.max(0,Math.min(r.left,innerWidth-p.offsetWidth-4))+'px';p.style.top=r.bottom+'px'}
