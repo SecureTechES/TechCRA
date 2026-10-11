@@ -82,6 +82,22 @@ body.tr #tree{display:none}
  #tree,body.tr #tree{display:none}
  body.tr #tree{display:flex;position:absolute;z-index:6;inset:0 auto 0 0;width:82%;box-shadow:4px 0 12px #0006}
 }
+dialog{background:var(--bg);color:var(--tx);border:1px solid var(--ln);box-shadow:4px 4px 14px #0006;padding:0;width:min(520px,94vw);max-height:92vh}
+dialog::backdrop{background:#0006}
+dialog h3{margin:0;background:linear-gradient(#2c5fb3,#1a428a);color:#fff;padding:4px 10px;font-size:13px;font-weight:600}
+.db{padding:10px 12px;display:grid;gap:8px;overflow:auto;max-height:calc(92vh - 90px)}
+.db label{display:grid;gap:2px}
+.db input[type=text],.db input[type=password],.db select,.db textarea{background:var(--pn);border:1px solid var(--ln);padding:2px 4px;width:100%}
+.db .ck{display:flex;gap:6px;align-items:center}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+.df{display:flex;justify-content:flex-end;gap:8px;padding:8px 12px;border-top:1px solid var(--ln)}
+.hl{color:var(--mu);font-size:12px;margin:0}
+#pbx{border-top:1px solid var(--ln);padding:4px;background:var(--bg);display:grid;gap:3px}
+#pbx input{background:var(--pn);border:1px solid var(--ln);padding:1px 4px;width:100%}
+.pr{display:flex;gap:4px;flex-wrap:wrap}
+#ring{background:var(--rY);color:#000;font-weight:600;padding:4px 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--ln);flex:0 0 auto}
+#ring[hidden]{display:none}
+.tg{background:var(--wa);color:#000;padding:0 8px;border-radius:3px;font-weight:600}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
 </style>
 </head>
@@ -96,15 +112,18 @@ body.tr #tree{display:none}
   <aside id="tree">
    <div class="tb"><label><input type="checkbox" id="wr"> Ajustar texto</label><input type="search" id="q" placeholder="Buscar abonado"></div>
    <div id="tn"></div>
+   <div id="pbx"></div>
    <div class="tt"><button data-nav="nav">Nav - F2</button><button data-nav="notes">Notas - F3</button><button data-nav="im">MI - F7</button></div>
   </aside>
   <section id="ctr"><div id="pg"></div><div class="pt" id="pt"></div></section>
  </div>
  <div class="cn" id="cn"></div>
  <div class="cn" id="c2"></div>
+ <div id="ring" hidden></div>
  <div class="msg"><b>Mensaje:</b><div class="m" id="m"></div><button class="b" data-a="clr">Borrar</button></div>
- <div class="sb"><span>Usuario: Operador (OP1)</span><span id="dt"></span><span>Europe/Madrid</span></div>
+ <div class="sb"><span>Usuario: Operador (OP1)</span><span id="dt"></span><span>Europe/Madrid</span><span id='ps'></span></div>
 </div>
+<dialog id='dlg'></dialog>
 <div class="pop" id="pop" hidden></div>
 <div id="toast" role="status"></div>
 <script>
@@ -134,49 +153,49 @@ const queue=()=>S.filter(s=>s.st!=='ok'&&s.st!=='susp').sort((a,b)=>a.pri-b.pri)
 const steps=s=>[...(s.cams?['VERIFICAR CÁMARAS DEL ABONADO']:[]),'CONTACTAR CON CLIENTE '+s.c[0][0].toUpperCase()+' AL '+s.c[0][2],'CONTACTAR CON '+(s.c[1]?s.c[1][0].toUpperCase():'CONTACTO 2')+' USANDO LISTA DE LLAMADAS','AVISAR A SERVICIO DE ACUDA / VIGILANTE','REGISTRAR RESOLUCIÓN'];
 const log=(s,c,d,u)=>s.events.unshift({t:new Date(),c,d,u:u||'OP1'});
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
-const MB={Archivo:[['Nuevo abonado','todo'],['Abrir abonado…','srch'],['Imprimir ficha','print']],Ver:[['Mostrar/ocultar árbol','tree'],['Cambiar tema','theme']],Herramientas:[['Buscar abonado','srch'],['Directorio de teléfonos','todo']],Operaciones:[['Siguiente alarma','next'],['Señal manual','man'],['Seguir alarma','trk']],Mantenimiento:[['Nuevo parte de servicio','part'],['Programar revisión','todo']],Informes:[['Informe de alarma','p4'],['Informe del abonado','p4']],Ayuda:[['Acerca de','about']]};
-const AB={Operaciones:[['Siguiente alarma','next'],['Señal manual','man'],['Alarma manual','todo']],Servicio:[['Nuevo parte de servicio','part']],Hacer:0,Acciones:[['Llamar a contacto 1','c0'],['Llamar a contacto 2','c1'],['Avisar a acuda','acuda'],['Enviar SMS al titular','sms'],['Ver cámaras','p9'],['Seguir alarma','trk']],Suspender:[['5 minutos','s:5 minutos'],['15 minutos','s:15 minutos'],['1 hora','s:1 hora'],['Hasta mañana','s:mañana']],Finalizar:[['Falsa alarma','f:Falsa alarma'],['Alarma real · acuda enviado','f:Alarma real - acuda enviado'],['Sin resolución','f:Sin resolución'],['Prueba del técnico','f:Prueba del técnico']]};
+const MB={Archivo:[['Nuevo abonado','todo'],['Abrir abonado…','srch'],['Imprimir ficha','print']],Ver:[['Mostrar/ocultar árbol','tree'],['Cambiar tema','theme']],Herramientas:[['Buscar abonado','srch'],['Configuración PBX…','pcfg'],['Simular llamada entrante','ring'],['Simular señal: Robo','sim:1130'],['Simular señal: Incendio','sim:1110'],['Simular señal: Fallo 220V','sim:1301'],['Simular señal: Fallo de comunicación','sim:1350']],Operaciones:[['Siguiente alarma','next'],['Señal manual','man'],['Seguir alarma','trk']],Mantenimiento:[['Poner en pruebas…','tst'],['Nuevo parte de servicio','part'],['Programar revisión','todo']],Informes:[['Informe de alarma','p4'],['Informe del abonado','p4']],Ayuda:[['Acerca de','about']]};
+const AB={Operaciones:[['Siguiente alarma','next'],['Señal manual','man'],['Alarma manual','todo']],Servicio:[['Nuevo parte de servicio','part']],Hacer:0,Acciones:[['Llamar a contacto 1','c0'],['Llamar a contacto 2','c1'],['Avisar a acuda','acuda'],['Enviar SMS al titular','sms'],['Ver cámaras','p9'],['Seguir alarma','trk']],Suspender:[['5 minutos','s:5 minutos'],['15 minutos','s:15 minutos'],['1 hora','s:1 hora'],['Hasta mañana','s:mañana']],Finalizar:0,'En pruebas':0};
 const MENU={};for(const k in MB)MENU['M'+k]=MB[k];for(const k in AB)MENU['A'+k]=AB[k];
-const T1=[['☰','Árbol','tree'],['📄','Nuevo abonado','todo'],['📂','Abrir abonado','srch'],['🖨️','Imprimir ficha','print'],['|'],['⏭️','Siguiente alarma','next'],['📞','Llamar a contacto 1','c0'],['🚓','Avisar a acuda','acuda'],['🔔','Señal manual','man'],['⭐','Seguir alarma','trk'],['🌓','Cambiar tema','theme']];
+const T1=[['☰','Árbol','tree'],['📄','Nuevo abonado','todo'],['📂','Abrir abonado','srch'],['🖨️','Imprimir ficha','print'],['|'],['⏭️','Siguiente alarma','next'],['📞','Llamar a contacto 1','c0'],['🚓','Avisar a acuda','acuda'],['🔔','Señal manual','man'],['⭐','Seguir alarma','trk'],['🛠️','Poner en pruebas','tst'],['☎️','Asistente PBX','pbx'],['🌓','Cambiar tema','theme']];
 const T2=[['🏠','Alarma','p1'],['🗺️','Planes','p2'],['🕒','Horario','p3'],['📋','Informe de alarma','p4'],['💬','Comentarios','p5'],['🛡️','Estado de zonas','p6'],['📡','Canal inverso','p7'],['🔧','Partes de servicio','p8'],['📹','Cámaras','p9']];
 const ib=a=>a.map(x=>x[0]==='|'?'<i class="sep"></i>':`<button class="ib" data-a="${x[2]}" title="${x[1]}" aria-label="${x[1]}">${x[0]}</button>`).join('');
 $('mb').innerHTML=Object.keys(MB).map(k=>`<button data-m="M${k}">${k}</button>`).join('');
 $('t1').innerHTML=ib(T1);$('t2').innerHTML=ib(T2);
-$('ab').innerHTML=Object.keys(AB).map(k=>AB[k]?`<button data-m="A${k}">${k} ▾</button>`:`<button data-a="do"><b>${k}</b></button>`).join('');
+$('ab').innerHTML=Object.keys(AB).map(k=>AB[k]?`<button data-m="A${k}">${k} ▾</button>`:`<button data-a="${k==='Hacer'?'do':k==='Finalizar'?'fin':'tst'}"><b>${k}</b></button>`).join('');
 const zs=(s,i)=>isA(s)&&s.ev[1].includes('Z'+pad(i+1));
 function pg(){
  if(!cur)return'<div class="box">Sin abonado seleccionado. Elige uno en el árbol o pulsa «Siguiente alarma».</div>';
  const s=cur;
- return`<div class="cb"><i class="dt" style="--c:${CL[s.st]}"></i><b>${s.id} - ${esc(s.n)}</b><span>${ST[s.st]}</span><span style="color:var(--mu)">${esc(s.a)}</span></div>`+P[tab](s);
+ return`<div class="cb"><i class="dt" style="--c:${CL[s.st]}"></i><b>${s.id} - ${esc(s.n)}</b><span>${ST[s.st]}</span>${tOn(s)?`<span class='tg'>🛠 En pruebas · ${esc(s.test.reason)} · hasta ${s.test.until?hm(s.test.until):'fin manual'}</span>`:''}<span style="color:var(--mu)">${esc(s.a)}</span></div>`+P[tab](s);
 }
 const P={};
 P[1]=s=>{const al=isA(s),act=s.st==='proc',ar=s.events.find(e=>e.c===3401||e.c===1401),ar2=s.events.find(e=>(e.c===3401||e.c===1401)&&e!==ar),ad=s.a.split(', '),st=steps(s),k=act?s.step:0;
  const kv=(a,b)=>`<dt>${a}</dt><dd>${b}</dd>`,dr=(c,l,v)=>`<tr><td><i class="dt" style="--c:${c}"></i>${l}</td><td>${v}</td></tr>`,area=(n,e)=>e?dr(e.c===3401?'var(--bl)':'var(--wa)','Área '+n,(e.c===3401?'Cerrada - ':'Abierta - ')+fmt(e.t)):'';
  const lim=span==='w'?6048e5:2592e6,ev=s.events.filter(e=>NOW-e.t<lim);
  const apT=al?st.map((x,i)=>`<tr class="${i<k?'dn':i===k?'cu':'pn'}"><td style="width:34px;text-align:center">${i<k?'✓':i===k?'➜':'●'}</td><td style="white-space:normal">${x}</td></tr>`).join(''):'<tr><td colspan="2">Sin acciones pendientes.</td></tr>';
- const ctT=s.c.map(c=>`<tr><td>${esc(c[0])}</td><td>${c[1]}</td><td>${c[2]}</td></tr>`).join('');
+ const ctT=s.c.map(c=>`<tr><td>${esc(c[0])}</td><td>${c[1]}</td><td>${c[2]}</td><td><button class='b' data-a='dial:${c[2]}|${esc(c[0])}'>Llamar</button></td></tr>`).join('');
  const clT=`<tr><td>LLAMADAS 1 (intrusión / pánico)</td><td style="white-space:normal">${s.c.map(c=>esc(c[0])).join(' → ')}</td></tr><tr><td>LLAMADAS 2 (averías)</td><td>${esc(s.c[0][0])} → Instalador D100</td></tr>`;
  return`<div class="ws"><div>
  <fieldset><legend>Datos del cliente</legend><div class="fl"><span class="ico">👤</span><div><b>${s.id} - ${esc(s.n)}</b><br>${esc(ad[0])}<br>${esc(ad[1]||'')}<br>Tipo: ${s.t}<br>Tel: ${s.c[0][2]}</div></div></fieldset>
  <fieldset><legend>Instalador</legend><div class="fl"><span class="ico">🏢</span><div><b>D100 - Instalador Uno</b><br>Tel: 100<br>E-mail: instalador@ejemplo.es</div></div></fieldset>
  <fieldset><legend>Datos de la alarma</legend><div class="fl"><span class="ico">🚨</span><div style="flex:1"><div class="yt"${al?'':' style="background:var(--hd)"'}>${al?CODES[s.ev[0]][0]:'Sin alarma'}</div><dl class="kv">${al?kv('Prioridad',s.pri+' &nbsp; Hora: '+fmt(s.at)):''}${kv('Sistema','1 - '+s.panel)}${kv('Área','1 - Área por defecto')}${kv('Zona',al?esc(s.ev[1]):'—')}${kv('Tx','1 - '+s.com)}</dl></div></div></fieldset></div>
- <div><div class="box"><table>${dr(al?CL[s.st]:'var(--ok)','Alarma',al?(act?'En gestión (1)':ST[s.st]+' (1)'):'Sin alarmas')}${dr('var(--ok)','Monitorización','Activa - '+s.t+' - Cuenta principal')}${dr('var(--ok)','Zona horaria','Europe/Madrid')}${dr('var(--ok)','Servicio','Completo')}<tr><td colspan="2"><b>Teléfonos</b></td></tr>${area(1,ar)}${area(2,ar2)}</table></div>
+ <div><div class="box"><table>${dr(al?CL[s.st]:'var(--ok)','Alarma',al?(act?'En gestión (1)':ST[s.st]+' (1)'):'Sin alarmas')}${tOn(s)?dr('var(--wa)','Monitorización','EN PRUEBAS - '+esc(s.test.reason)):dr('var(--ok)','Monitorización','Activa - '+s.t+' - Cuenta principal')}${dr('var(--ok)','Zona horaria','Europe/Madrid')}${dr('var(--ok)','Servicio','Completo')}<tr><td colspan="2"><b>Teléfonos</b></td></tr>${area(1,ar)}${area(2,ar2)}</table></div>
  <fieldset style="margin-top:6px"><legend>Patrón de acción - ${esc(s.n.split(' ')[0].toUpperCase())}</legend><div>${[['ap','Patrón de acción'],['ct','Ver todos los contactos'],['cl','Ver todas las listas de llamadas']].map(([v,l])=>`<label style="margin-right:12px;white-space:nowrap"><input type="radio" name="v" data-v="${v}"${view===v?' checked':''}> ${l}</label>`).join('')}</div><div class="tw" style="margin-top:4px"><table>${view==='ap'?apT:view==='ct'?ctT:clT}</table></div></fieldset></div></div>
  <fieldset><legend>Registro del abonado</legend><div class="fl"><div style="min-width:80px"><label><input type="radio" name="sp" data-sp="w"${span==='w'?' checked':''}> Semana</label><br><label><input type="radio" name="sp" data-sp="m"${span==='m'?' checked':''}> Mes</label><br><button class="b" style="margin-top:6px" disabled>Más</button></div>
- <div class="tw lg${wrap?' wr':''}" style="flex:1"><table><tr><th>Fecha</th><th>Hora</th><th>Descripción</th><th>Usuario</th></tr>${ev.map((e,i)=>{const ty=CODES[e.c][1];return`<tr class="${ty==='proc'?'rG':ty==='ok'?'':i===0&&al?'rA':'rS'}"><td>${ty==='proc'?'':dmy(e.t)}</td><td>${hms(e.t)}</td><td>${ty==='proc'?esc(e.d):(ty==='ok'?'SEÑAL':'ALARMA')+' - '+CODES[e.c][0]+' ['+e.c+'] '+esc(e.d)}</td><td>${e.u}</td></tr>`}).join('')}</table></div></div></fieldset>`};
+ <div class="tw lg${wrap?' wr':''}" style="flex:1"><table><tr><th>Fecha</th><th>Hora</th><th>Descripción</th><th>Usuario</th></tr>${ev.map((e,i)=>{const ty=CODES[e.c][1];return`<tr class="${ty==='proc'?'rG':ty==='ok'?'':i===0&&al&&!e.d.includes('OMITIDA')?'rA':'rS'}"><td>${ty==='proc'?'':dmy(e.t)}</td><td>${hms(e.t)}</td><td>${ty==='proc'?esc(e.d):(ty==='ok'?'SEÑAL':'ALARMA')+' - '+CODES[e.c][0]+' ['+e.c+'] '+esc(e.d)}</td><td>${e.u}</td></tr>`}).join('')}</table></div></div></fieldset>`};
 P[2]=s=>`<fieldset><legend>Planes y planos</legend><div class="box" style="aspect-ratio:16/9;max-height:320px;position:relative;background-image:repeating-linear-gradient(0deg,transparent 0 23px,#8883 23px 24px),repeating-linear-gradient(90deg,transparent 0 23px,#8883 23px 24px)">${s.z.split('|').map((z,i)=>`<span class="dt" title="${esc(z)}" style="position:absolute;left:${8+i*15%80}%;top:${12+i*37%70}%;--c:${zs(s,i)?'var(--al)':'var(--ok)'}"></span>`).join('')}</div><p style="color:var(--mu)">Aquí se integrará tu visor de planos con detectores, expansores, cámaras y fuentes.</p></fieldset>`;
 P[3]=s=>{const r=s.t==='Industria'?[['Lun-Sáb','06:00','22:00'],['Domingo','Cerrado','']]:s.t==='Comercio'||s.t==='Oficina'?[['Lun-Vie','08:30','20:30'],['Sábado','09:00','14:00'],['Domingo','Cerrado','']]:[['Todos los días','Sin horario','']];
  return`<fieldset><legend>Horario de apertura y cierre</legend><div class="tw"><table><tr><th>Días</th><th>Apertura</th><th>Cierre</th></tr>${r.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td></tr>`).join('')}</table></div></fieldset>`};
 P[4]=s=>`<fieldset><legend>Informe de alarma</legend><div class="tw"><table><tr><th>Fecha</th><th>Evento</th><th>Detalle</th><th>Usuario</th></tr>${s.events.filter(e=>CODES[e.c][1]!=='ok').map(e=>`<tr><td>${fmt(e.t)}</td><td>${CODES[e.c][0]} [${e.c}]</td><td>${esc(e.d)}</td><td>${e.u}</td></tr>`).join('')}</table></div></fieldset>`;
 P[5]=s=>`<fieldset><legend>Comentarios</legend><div class="tw"><table><tr><th>Fecha</th><th>Usuario</th><th>Comentario</th></tr>${s.cm.map(c=>`<tr class="wr"><td>${c[0]}</td><td>${c[1]}</td><td style="white-space:normal">${esc(c[2])}</td></tr>`).join('')}</table></div><p><textarea id="cmt" rows="3" style="width:100%;background:var(--pn);border:1px solid var(--ln)" placeholder="Nuevo comentario"></textarea><button class="b" data-a="cm">Añadir comentario</button></p></fieldset>`;
-P[6]=s=>`<fieldset><legend>Estado de zonas</legend><div class="tw"><table><tr><th>Zona</th><th>Descripción</th><th>Tipo</th><th>Estado</th></tr>${s.z.split('|').map((z,i)=>`<tr class="${zs(s,i)?'rA':''}"><td>${pad(i+1)}</td><td>${esc(z)}</td><td>${/Humo/.test(z)?'Incendio':/ánico/.test(z)?'Pánico':'Intrusión'}</td><td>${zs(s,i)?'Disparada':'Reposo'}</td></tr>`).join('')}</table></div></fieldset>`;
+P[6]=s=>`<fieldset><legend>Estado de zonas</legend><div class="tw"><table><tr><th>Zona</th><th>Descripción</th><th>Tipo</th><th>Estado</th></tr>${s.z.split('|').map((z,i)=>`<tr class="${zs(s,i)?'rA':''}"><td>${pad(i+1)}</td><td>${esc(z)}</td><td>${/Humo/.test(z)?'Incendio':/ánico/.test(z)?'Pánico':'Intrusión'}</td><td>${zs(s,i)?'Disparada':'Reposo'}${tZ(s,i)?' · 🛠 En pruebas':''}</td></tr>`).join('')}</table></div><p><button class='b' data-a='tst'>Poner en pruebas…</button></p></fieldset>`;
 P[7]=s=>`<fieldset><legend>Canal inverso · ${s.com}</legend><p>Envía órdenes a la central ${s.panel}:</p>${['Armar','Desarmar','Estado','Reiniciar sirena'].map(x=>`<button class="b" data-a="rc:${x}">${x}</button> `).join('')}</fieldset>`;
 P[8]=s=>`<fieldset><legend>Partes de servicio y mantenimientos</legend><div class="tw"><table><tr><th>Tipo</th><th>Fecha</th><th>Estado</th></tr>${s.m.map(m=>{const p=m.split('|');return`<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td></tr>`}).join('')}</table></div><p><button class="b" data-a="part">Nuevo parte de servicio</button></p></fieldset>`;
 P[9]=s=>s.cams?`<fieldset><legend>Cámaras (${s.cams})</legend><div class="cams">${Array.from({length:Math.min(s.cams,6)},(_,i)=>`<div class="cam"><span>CAM ${i+1}</span><button class="b" data-a="todo">Ver</button></div>`).join('')}</div></fieldset>`:'<div class="box">Este abonado no tiene cámaras asociadas.</div>';
 function tree(){
  const d=(k,l,body)=>`<button class="nd" style="--d:0" data-f="${k}">${op.has(k)?'⊟':'⊞'} 📁 ${l}</button>${op.has(k)?body:''}`;
  const it=(dp,l,a,id,sel)=>`<button class="nd${sel?' sel':''}" style="--d:${dp}"${id?` data-id="${id}"`:''}${a?` data-a="${a}"`:''}>${l}</button>`;
- const lab=s=>`<i class="dt" style="--c:${CL[s.st]}"></i>${s.id} - ${esc(s.n)}`;
+ const lab=s=>`<i class="dt" style="--c:${CL[s.st]}"></i>${tOn(s)?'🛠 ':''}${s.id} - ${esc(s.n)}`;
  const list=a=>a.length?a.map(s=>it(2,lab(s),0,s.id,cur&&cur.id===s.id)).join(''):it(2,'<span style="color:var(--mu)">(vacío)</span>');
  let h='';
  if(qs){const r=S.filter(s=>(s.n+s.id+s.a).toLowerCase().includes(qs));h+=d('Resultados','Resultados ('+r.length+')',list(r))}
@@ -200,7 +219,7 @@ function foot(){
  m.className='m'+(t&&!clr?'':' calm');
  m.textContent=t&&!clr?`[${hm(t.at)}] Alarma sin gestionar: ${CODES[t.ev[0]][0]} de prioridad ${t.pri} - ${t.n}`:'Sin mensajes';
 }
-const all=()=>{tree();$('pg').innerHTML=pg();pt();foot()};
+const all=()=>{tree();$('pg').innerHTML=pg();pt();foot();phone()};
 function openC(id){cur=S.find(s=>s.id===id);tab=1;view='ap';rec=[id,...rec.filter(x=>x!==id)].slice(0,6);
  if(!cur.vw&&isSig(cur)){cur.vw=true;log(cur,1999,'VISTO - '+CODES[cur.ev[0]][0]+' - Respuesta [1 seg]')}
  if(innerWidth<=820)document.body.classList.remove('tr');all()}
@@ -213,12 +232,28 @@ function act(k){
  if(k==='print')return print();
  if(k==='srch'){document.body.classList[innerWidth<=820?'add':'remove']('tr');nav='nav';tree();return $('q').focus()}
  if(k==='next'){const n=queue()[0];return n?openC(n.id):toast('No hay alarmas pendientes')}
+ if(k==='x')return $('dlg').close();
+ if(k==='pbx'){document.body.classList[innerWidth<=820?'add':'remove']('tr');nav='nav';tree();return $('pn').focus()}
+ if(k==='pcfg')return dlgCfg();
+ if(k==='cok'){PBX.connect({host:$('ch').value,user:$('cu').value});return $('dlg').close()}
+ if(k==='ring'){const r=cur||S[0],c=r.c[0];return PBX.ring(c[2],c[0]+' ('+r.n+')',r.id)}
+ if(k==='pans')return PBX.answer();
+ if(k==='phup')return PBX.hangup();
+ if(k==='phold')return PBX.hold();
+ if(k==='pcall')return PBX.call($('pn').value.trim());
+ if(k.startsWith('dial:')){const q=k.slice(5).split('|');return PBX.call(q[0],q[1],cur&&cur.id)}
  const s=cur;if(!s)return toast('Selecciona primero un abonado');
+ if(k==='fin')return isA(s)?dlgRes(s):toast('No hay alarma activa');
+ if(k==='tst')return dlgTest(s);
+ if(k==='rok')return doRes(s);
+ if(k==='tok')return doTest(s);
+ if(k==='tend'){endTest(s,'finalizadas por el operador');$('dlg').close();return all()}
+ if(k.startsWith('sim:'))return sim(s,+k.slice(4));
  if(/^p\d$/.test(k)){if(k==='p7'&&!s.rc)return toast('Este abonado no tiene canal inverso');tab=+k[1];return all()}
  if(k==='man')log(s,1999,'SEÑAL MANUAL registrada por el operador');
  else if(k==='trk'){s.tr=!s.tr;log(s,1999,s.tr?'ALARMA en seguimiento':'Seguimiento cancelado');toast(s.tr?'Alarma en seguimiento':'Seguimiento cancelado')}
  else if(k==='part'){s.m.unshift('Parte manual|'+dmy(new Date())+'|Pendiente');tab=8;toast('Parte de servicio creado')}
- else if(k[0]==='c'&&k.length===2){const c=s.c[+k[1]]||s.c[0];log(s,1999,'CONTACTAR CON '+c[0].toUpperCase()+' AL '+c[2]+' - Resultado: llamada realizada');toast('Llamando a '+c[0])}
+ else if(/^c[0-9]$/.test(k)){const c=s.c[+k[1]]||s.c[0];PBX.call(c[2],c[0],s.id)}
  else if(k==='acuda'){log(s,1999,'AVISO a servicio de acuda');toast('Acuda avisado')}
  else if(k==='sms'){log(s,1999,'SMS enviado a '+s.c[0][0]);toast('SMS enviado')}
  else if(k==='cm'){const v=$('cmt').value.trim();if(!v)return;s.cm.unshift([fmt(new Date()),'OP1',v])}
@@ -229,6 +264,71 @@ function act(k){
   if(s.st!=='proc'){s.st='proc';s.step=0;s.vw=true;log(s,1999,'ACCIÓN - Alarma tomada por el operador')}
   else if(s.step<st.length){log(s,1999,st[s.step]);s.step++;if(s.step>=st.length)toast('Patrón completado: usa Finalizar')}}
  all()}
+const TYPES=[['1130','Robo / intrusión'],['1120','Pánico'],['1110','Incendio'],['1301','Fallo 220V'],['1302','Batería baja'],['1350','Fallo de comunicación'],['arm','Armado / desarmado'],['1602','Test periódico']];
+const REASONS=['Visita técnica','Avería','Mantenimiento','Obras en el local','Fallo de línea / comunicador','Otro'];
+const RES=['Falsa alarma - error del usuario','Falsa alarma - fallo del equipo','Alarma real - acuda enviado','Alarma real - policía avisada','Pruebas del técnico','Sin contacto / sin resolución','Avería técnica en seguimiento'];
+const tOn=s=>s.test&&(!s.test.until||s.test.until>Date.now());
+const tZ=(s,i)=>tOn(s)&&s.test.scope==='z'&&s.test.zones.includes(i);
+const sel=(id,a)=>`<select id='${id}'>${a.map(x=>`<option>${x}</option>`).join('')}</select>`;
+function endTest(s,m){if(s.test){log(s,1999,'FIN DE PRUEBAS - '+m);s.test=null}}
+function dlgOpen(t,body,ok){$('dlg').innerHTML=`<h3>${t}</h3><div class='db'>${body}</div><div class='df'>${ok}<button class='b' data-a='x'>Cancelar</button></div>`;$('dlg').showModal()}
+function dlgRes(s){const left=steps(s).length-(s.st==='proc'?s.step:0);
+ dlgOpen('Resolución de alarma - '+esc(s.n),`<p class='hl'>${CODES[s.ev[0]][0]} · ${esc(s.ev[1])} · prioridad ${s.pri}${left?' · quedan '+left+' acciones del patrón sin completar':''}</p>
+ <label>Código de resolución${sel('rs',RES)}</label>
+ <label>Persona contactada${sel('rp',[...s.c.map(c=>c[0]+' ('+c[1]+')'),'Otra persona','Nadie'])}</label>
+ <label class='ck'><input type='checkbox' id='rk'> Palabra clave verificada</label>
+ <label class='ck'><input type='checkbox' id='rz'> Se ha enviado servicio de acuda / vigilante</label>
+ <label>Notas<textarea id='rn' rows='3'></textarea></label>`,"<button class='b' data-a='rok'>Aceptar y cerrar alarma</button>")}
+function doRes(s){const v=id=>$(id).value,k=id=>$(id).checked;
+ s.st='ok';s.step=0;log(s,1999,'RESOLUCIÓN - '+CODES[s.ev[0]][0]+' - Res: '+v('rs')+' - Contacto: '+v('rp')+(k('rk')?' - Clave verificada':'')+(k('rz')?' - Acuda enviado':'')+(v('rn')?' - Notas: '+v('rn'):''));
+ $('dlg').close();toast('Alarma finalizada');all()}
+function dlgTest(s){const t=tOn(s)?s.test:null,zl=s.z.split('|');
+ dlgOpen('Poner en pruebas - '+esc(s.n),`<p class='hl'>«Suspender» aplaza una alarma ya recibida. «En pruebas» hace que las señales elegidas se registren pero no generen alarma.</p>
+ ${t?`<p class='tg'>Ya en pruebas: ${esc(t.reason)} · hasta ${t.until?hm(t.until):'fin manual'}</p>`:''}
+ <label>Motivo${sel('tr',REASONS)}</label>
+ <label>Técnico / referencia de parte<input type='text' id='tn2' value='${t?esc(t.note):''}'></label>
+ <label>Ámbito<select id='ts'><option value='a'>Todo el abonado</option><option value='z'>Solo las zonas marcadas</option></select></label>
+ <div class='dg'>${zl.map((z,i)=>`<label class='ck'><input type='checkbox' class='tz' value='${i}'> ${pad(i+1)} ${esc(z)}</label>`).join('')}</div>
+ <b>Señales a omitir (no generan alarma)</b>
+ <div class='dg'>${TYPES.map(([c,l],i)=>`<label class='ck'><input type='checkbox' class='tt2' value='${c}'${i<6?' checked':''}> ${l}</label>`).join('')}</div>
+ <label>Duración${sel('td',['30 minutos','1 hora','2 horas','4 horas','8 horas','24 horas','Hasta que lo finalice'])}</label>`,
+ "<button class='b' data-a='tok'>Poner en pruebas</button>"+(t?"<button class='b' data-a='tend'>Finalizar pruebas</button>":''))}
+function doTest(s){const D=[30,60,120,240,480,1440,0],v=id=>$(id).value,ty=[...document.querySelectorAll('.tt2:checked')].map(x=>x.value),zn=[...document.querySelectorAll('.tz:checked')].map(x=>+x.value),sc=v('ts');
+ if(!ty.length)return toast('Elige al menos un tipo de señal');
+ if(sc==='z'&&!zn.length)return toast('Marca al menos una zona');
+ const m=D[$('td').selectedIndex];
+ endTest(s,'sustituidas por nuevas');
+ s.test={reason:v('tr'),note:v('tn2'),scope:sc,zones:zn,types:ty,until:m?new Date(Date.now()+m*6e4):null};
+ log(s,1999,'EN PRUEBAS - '+v('tr')+(v('tn2')?' ('+v('tn2')+')':'')+' - Ámbito: '+(sc==='a'?'todo el abonado':'zonas '+zn.map(i=>pad(i+1)).join(','))+' - Se omiten: '+ty.map(c=>TYPES.find(x=>x[0]===c)[1]).join(', ')+' - Hasta '+(m?hm(s.test.until):'fin manual'));
+ $('dlg').close();toast('Abonado en pruebas');all()}
+function signal(s,c,d){
+ if(s.test&&!tOn(s))endTest(s,'tiempo agotado');
+ const T=s.test,zi=/^Z(..)/.exec(d),om=T&&T.types.includes(c===3401||c===1401?'arm':String(c))&&(T.scope==='a'||(zi&&T.zones.includes(+zi[1]-1))),ty=CODES[c][1];
+ s.events.unshift({t:new Date(),c,d:om?d+' · OMITIDA (en pruebas: '+T.reason+')':d,u:'SYS'});
+ if(om)return 'omit';
+ if(ty==='ok'||s.st==='proc')return 'log';
+ if(s.st==='ok'||s.st==='susp'){s.st=ty;s.ev=[c,d];s.pri=PRI[c];s.at=new Date();s.vw=false;s.step=0;return 'new'}
+ return 'log'}
+function sim(s,c){const zl=s.z.split('|'),i=Math.floor(Math.random()*zl.length),d=[1130,1120,1110].includes(c)?'Z'+pad(i+1)+' '+zl[i]:CODES[c][0],r=signal(s,c,d);
+ toast(r==='omit'?'Señal omitida: abonado en pruebas':r==='new'?'Nueva alarma: '+s.n:'Señal registrada');all()}
+/* Punto de integración SIP: sustituir connect/call/answer/hold/hangup por JsSIP o SIP.js (UA.register, ua.call, session.on('accepted'|'ended'), session.hold()). Ahora es una simulación. */
+const PBX={st:'idle',reg:false,num:'',who:'',sid:null,t0:0,cfg:{host:'wss://pbx.ejemplo.es:8089/ws',user:''},
+ connect(c){this.cfg=c;this.reg=true;phone();toast('PBX registrada (simulado)')},
+ call(n,w,sid){if(!n)return toast('Escribe un número');if(this.st!=='idle')return toast('Ya hay una llamada en curso');
+  this.st='dial';this.num=n;this.who=w||n;this.sid=sid||null;this.t0=Date.now();phone();
+  this.tm=setTimeout(()=>{if(this.st==='dial'){this.st='talk';this.t0=Date.now();phone()}},2500)},
+ ring(n,w,sid){if(this.st!=='idle')return toast('Ya hay una llamada en curso');this.st='ring';this.num=n;this.who=w;this.sid=sid;this.t0=Date.now();phone()},
+ answer(){if(this.st==='ring'){this.st='talk';this.t0=Date.now();if(this.sid)openC(this.sid);else phone()}},
+ hold(){if(this.st==='talk'||this.st==='hold'){this.st=this.st==='talk'?'hold':'talk';phone()}},
+ hangup(){if(this.st==='idle')return;clearTimeout(this.tm);const s=S.find(x=>x.id===this.sid),d=Math.round((Date.now()-this.t0)/1e3),was=this.st;
+  if(s)log(s,1999,'LLAMADA '+(was==='ring'?'ENTRANTE de ':'a ')+this.who.toUpperCase()+' '+this.num+' - '+(was==='talk'||was==='hold'?'Contestada, duración '+Math.floor(d/60)+':'+pad(d%60):was==='ring'?'Rechazada':'Sin respuesta'));
+  this.st='idle';this.num='';this.who='';this.sid=null;if(s)all();else phone()}};
+const plab=()=>{const p=PBX,d=Math.round((Date.now()-p.t0)/1e3),m=pad(Math.floor(d/60))+':'+pad(d%60);return {idle:'Inactivo',dial:'Llamando a '+p.who+'…',ring:'Entrante: '+p.who,talk:'En llamada con '+p.who+' '+m,hold:'En espera: '+p.who+' '+m}[p.st]};
+function phone(){const p=PBX,f=$('pn'),v=f?f.value:'',L=plab();
+ $('pbx').innerHTML=`<div><b>Asistente PBX</b> &nbsp;<i class='dt' style='--c:${p.reg?'var(--ok)':'var(--mu)'}'></i>${p.reg?'Registrado':'Sin registrar'}</div><div id='pl' style='color:${p.st==='idle'?'var(--mu)':'var(--tx)'}'>${esc(L)}</div><input id='pn' type='tel' placeholder='Número o extensión' value='${esc(v)}'><div class='pr'><button class='b' data-a='pcall'${p.st!=='idle'?' disabled':''}>Llamar</button><button class='b' data-a='phup'${p.st==='idle'?' disabled':''}>Colgar</button><button class='b' data-a='phold'${p.st==='talk'||p.st==='hold'?'':' disabled'}>${p.st==='hold'?'Reanudar':'Retener'}</button><button class='b' data-a='pcfg' title='Configuración PBX'>⚙</button></div>`;
+ const r=$('ring');r.hidden=p.st!=='ring';r.innerHTML=p.st==='ring'?`📞 Llamada entrante: ${esc(p.who)} (${esc(p.num)}) <button class='b' data-a='pans'>Contestar</button><button class='b' data-a='phup'>Rechazar</button>`:'';
+ $('ps').textContent='PBX: '+(p.reg?'registrada':'sin registrar')+(p.st==='idle'?'':' · '+L.split(' ')[0])}
+function dlgCfg(){const c=PBX.cfg;dlgOpen('Configuración PBX / SIP',`<p class='hl'>Modo simulado. Para conectar con tu PBX real, sustituye los métodos de PBX por un cliente SIP/WebRTC (SIP.js o JsSIP).</p><label>Servidor SIP (WebSocket)<input type='text' id='ch' value='${esc(c.host)}'></label><label>Usuario / extensión<input type='text' id='cu' value='${esc(c.user)}'></label><label>Contraseña<input type='password' id='cp'></label>`,"<button class='b' data-a='cok'>Registrar</button>")}
 function pop(b){const p=$('pop'),it=MENU[b.dataset.m];if(!p.hidden&&p.dataset.o===b.dataset.m){p.hidden=true;return}
  p.innerHTML=it.map(x=>`<button data-a="${x[1]}">${x[0]}</button>`).join('');p.dataset.o=b.dataset.m;p.hidden=false;
  const r=b.getBoundingClientRect();p.style.left=Math.max(0,Math.min(r.left,innerWidth-p.offsetWidth-4))+'px';p.style.top=r.bottom+'px'}
@@ -248,7 +348,7 @@ document.addEventListener('change',e=>{const d=e.target.dataset;
 document.addEventListener('input',e=>{
  if(e.target.id==='q'){qs=e.target.value.toLowerCase();op.add('Resultados');tree()}
  if(e.target.id==='nt')notes=e.target.value});
-setInterval(()=>{$('dt').textContent=dmy(new Date())+' '+hms(new Date())},1000);$('dt').textContent=dmy(new Date())+' '+hms(new Date());
+setInterval(()=>{$('dt').textContent=dmy(new Date())+' '+hms(new Date());if(PBX.st==='talk'||PBX.st==='hold'){const e=$('pl');if(e)e.textContent=plab()}},1000);$('dt').textContent=dmy(new Date())+' '+hms(new Date());
 document.body.classList.remove('tr');
 openC(queue()[0].id);
 </script>
