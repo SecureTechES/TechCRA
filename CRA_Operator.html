@@ -165,18 +165,18 @@ const queue=()=>S.filter(s=>s.st!=='ok'&&s.st!=='susp').sort((a,b)=>a.pri-b.pri)
 const steps=s=>[...(s.cams?['VERIFICAR CÁMARAS DEL ABONADO']:[]),'CONTACTAR CON CLIENTE '+s.c[0][0].toUpperCase()+' AL '+s.c[0][2],'CONTACTAR CON '+(s.c[1]?s.c[1][0].toUpperCase():'CONTACTO 2')+' USANDO LISTA DE LLAMADAS','AVISAR A SERVICIO DE ACUDA / VIGILANTE','REGISTRAR RESOLUCIÓN'];
 const log=(s,c,d,u)=>s.events.unshift({t:new Date(),c,d,u:u||'OP1'});
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
-const MB={Archivo:[['Nuevo abonado','nw'],['Editar ficha…','ed'],['Abrir abonado…','srch'],['Imprimir ficha','print']],Ver:[['Mostrar/ocultar árbol','tree'],['Cambiar tema','theme']],Herramientas:[['Buscar abonado','srch'],['Códigos de resolución…','rcd'],['Configuración PBX…','pcfg'],['Simular llamada entrante','ring'],['Simular pruebas desde app técnica','tsim'],['Simular señal: Robo','sim:1130'],['Simular señal: Incendio','sim:1110'],['Simular señal: Fallo 220V','sim:1301'],['Simular señal: Fallo de comunicación','sim:1350']],Operaciones:[['Siguiente alarma','next'],['Señal manual','man'],['Seguir alarma','trk']],Mantenimiento:[['Poner en pruebas…','tst'],['Mantenimientos contratados','p8'],['Nueva orden de trabajo…','ot'],['Órdenes y partes','p9']],Informes:[['Informe de alarma','p4'],['Informe del abonado','p4']],Ayuda:[['Atajos de teclado','keys'],['Acerca de','about']]};
+const MB={Archivo:[['Nuevo abonado','nw'],['Editar ficha…','ed'],['Abrir abonado…','srch'],['Imprimir ficha','print']],Ver:[['Inicio','home'],['Mostrar/ocultar árbol','tree'],['Cambiar tema','theme']],Herramientas:[['Buscar abonado','srch'],['Códigos de resolución…','rcd'],['Configuración PBX…','pcfg'],['Simular llamada entrante','ring'],['Simular pruebas desde app técnica','tsim'],['Simular señal: Robo','sim:1130'],['Simular señal: Incendio','sim:1110'],['Simular señal: Fallo 220V','sim:1301'],['Simular señal: Fallo de comunicación','sim:1350']],Operaciones:[['Siguiente alarma','next'],['Señal manual','man'],['Seguir alarma','trk']],Mantenimiento:[['Poner en pruebas…','tst'],['Mantenimientos contratados','p8'],['Nueva orden de trabajo…','ot'],['Órdenes y partes','p9']],Informes:[['Informe de alarma','p4'],['Informe del abonado','p4']],Ayuda:[['Atajos de teclado','keys'],['Acerca de','about']]};
 const AB={Operaciones:[['Siguiente alarma','next'],['Señal manual','man'],['Alarma manual','todo']],Servicio:[['Nueva orden de trabajo','ot'],['Mantenimientos','p8'],['Órdenes y partes','p9']],Hacer:0,Acciones:[['Llamar a contacto 1','c0'],['Llamar a contacto 2','c1'],['Avisar a acuda','acuda'],['Enviar SMS al titular','sms'],['Ver cámaras','p10'],['Seguir alarma','trk']],Suspender:0,Finalizar:0,'En pruebas':0};
 const MENU={};for(const k in MB)MENU['M'+k]=MB[k];for(const k in AB)MENU['A'+k]=AB[k];
-const T1=[['☰','Árbol','tree'],['📄','Nuevo abonado','nw'],['✏️','Editar ficha','ed'],['📂','Abrir abonado','srch'],['🖨️','Imprimir ficha','print'],['|'],['⏭️','Siguiente alarma','next'],['📞','Llamar a contacto 1','c0'],['🚓','Avisar a acuda','acuda'],['🔔','Señal manual','man'],['⭐','Seguir alarma','trk'],['🛠️','Poner en pruebas','tst'],['☎️','Asistente PBX','pbx'],['🌓','Cambiar tema','theme']];
-const T2=[['🏠','Alarma','p1'],['🗺️','Planes','p2'],['🕒','Horario','p3'],['📋','Informe de alarma','p4'],['💬','Comentarios','p5'],['🛡️','Estado de zonas','p6'],['📡','Canal inverso','p7'],['🗓️','Mantenimientos','p8'],['🔧','Órdenes y partes','p9'],['📹','Cámaras','p10']];
+const T1=[['☰','Árbol','tree'],['🏠','Inicio','home'],['📄','Nuevo abonado','nw'],['✏️','Editar ficha','ed'],['📂','Abrir abonado','srch'],['🖨️','Imprimir ficha','print'],['|'],['⏭️','Siguiente alarma','next'],['📞','Llamar a contacto 1','c0'],['🚓','Avisar a acuda','acuda'],['🔔','Señal manual','man'],['⭐','Seguir alarma','trk'],['🛠️','Poner en pruebas','tst'],['☎️','Asistente PBX','pbx'],['🌓','Cambiar tema','theme']];
+const T2=[['🚨','Alarma','p1'],['🗺️','Planes','p2'],['🕒','Horario','p3'],['📋','Informe de alarma','p4'],['💬','Comentarios','p5'],['🛡️','Estado de zonas','p6'],['📡','Canal inverso','p7'],['🗓️','Mantenimientos','p8'],['🔧','Órdenes y partes','p9'],['📹','Cámaras','p10']];
 const ib=a=>a.map(x=>x[0]==='|'?'<i class="sep"></i>':`<button class="ib" data-a="${x[2]}" title="${x[1]}" aria-label="${x[1]}">${x[0]}</button>`).join('');
 $('mb').innerHTML=Object.keys(MB).map(k=>`<button data-m="M${k}">${k}</button>`).join('');
 $('t1').innerHTML=ib(T1);$('t2').innerHTML=ib(T2);
 $('ab').innerHTML=Object.keys(AB).map(k=>AB[k]?`<button data-m="A${k}">${k} ▾</button>`:`<button data-a="${{Hacer:'do',Finalizar:'fin',Suspender:'sus'}[k]||'tst'}"><b>${k}</b></button>`).join('');
 const zs=(s,i)=>isA(s)&&s.ev[1].includes('Z'+pad(i+1));
 function pg(){
- if(!cur)return'<div class="box">Sin abonado seleccionado. Elige uno en el árbol o pulsa «Siguiente alarma».</div>';
+ if(!cur)return home();
  const s=cur;
  return`<div class="cb"><i class="dt" style="--c:${CL[s.st]}"></i><b>${s.id} - ${esc(s.n)}</b><span>${ST[s.st]}</span>${tOn(s)?`<span class='tg'>🛠 En pruebas · ${s.test.origin} · ${esc(s.test.reason)}${s.test.ref?' · '+s.test.ref:''} · hasta ${s.test.until?hm(s.test.until):'fin manual'}</span>`:''}<span style="color:var(--mu)">${esc(s.a)}</span><span style='flex:1'></span>${s.mod?`<span class='hl'>Modificado por ${s.mod.by} · ${fmt(s.mod.at)} · ${esc(s.mod.f.join(', '))}</span>`:''}${s.st==='susp'?"<button class='b' data-a='sus'>Cancelar suspensión</button>":''}<button class='b' data-a='ed'>Editar ficha</button></div>`+P[tab](s);
 }
@@ -246,6 +246,7 @@ function act(k){
  if(k==='print')return print();
  if(k==='srch'){document.body.classList[innerWidth<=820?'add':'remove']('tr');nav='nav';tree();return $('q').focus()}
  if(k==='next'){const n=queue()[0];return n?openC(n.id):toast('No hay alarmas pendientes')}
+ if(k==='home'){cur=null;otSel=null;tab=1;return all()}
  if(k==='x')return $('dlg').close();
  if(k==='pbx'){document.body.classList[innerWidth<=820?'add':'remove']('tr');nav='nav';tree();return $('pn').focus()}
  if(k==='pcfg')return dlgCfg();
@@ -411,7 +412,7 @@ function doEdit(s){const v=id=>$(id).value.trim(),n=!s,
   s.mod={by:'OP1',at:new Date(),f:ch};log(s,1999,'FICHA MODIFICADA por OP1 - campos: '+ch.join(', '))}
  $('dlg').close();toast(n?'Abonado creado':'Ficha guardada');if(n)openC(s.id);else all()}
 function dlgRC(){dlgOpen('Códigos de resolución',`<p class='hl'>Estos códigos aparecen en el diálogo de resolución de alarmas.</p>${RES.map((r,i)=>`<div class='ck'><span style='flex:1'>${esc(r)}</span><button class='b' data-a='rdel:${i}'>Quitar</button></div>`).join('')}<div class='ck'><input type='text' id='rnew' placeholder='Nuevo código de resolución'><button class='b' data-a='radd'>Añadir</button></div>`,"<button class='b' data-a='x'>Cerrar</button>",1)}
-function dlgKeys(){dlgOpen('Atajos de teclado',`<table>${[['F2 / F3 / F7','Árbol / Notas / Mensajes'],['Alt + N','Siguiente alarma'],['Alt + H','Hacer (siguiente acción)'],['Alt + S','Suspender / cancelar suspensión'],['Alt + F','Finalizar con resolución'],['Alt + P','Poner en pruebas'],['Alt + T','Asistente PBX'],['Alt + 1…0','Páginas del abonado'],['Esc','Cerrar menús y diálogos']].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join('')}</table>`,"<button class='b' data-a='x'>Cerrar</button>",1)}
+function dlgKeys(){dlgOpen('Atajos de teclado',`<table>${[['F2 / F3 / F7','Árbol / Notas / Mensajes'],['Alt + N','Siguiente alarma'],['Alt + I','Inicio (resumen y cola)'],['Alt + H','Hacer (siguiente acción)'],['Alt + S','Suspender / cancelar suspensión'],['Alt + F','Finalizar con resolución'],['Alt + P','Poner en pruebas'],['Alt + T','Asistente PBX'],['Alt + 1…0','Páginas del abonado'],['Esc','Cerrar menús y diálogos']].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join('')}</table>`,"<button class='b' data-a='x'>Cerrar</button>",1)}
 const OTC={Pendiente:'var(--wa)',Abierta:'var(--wa)','En curso':'var(--bl)',Finalizado:'var(--ok)',Cerrada:'var(--ok)',Facturado:'var(--cm)'};
 const sdot=e=>`<i class='dt' style='--c:${OTC[e]}'></i>${e}`,eur=n=>n.toFixed(2).replace('.',',')+' €';
 const ptot=p=>{const mo=p.horas*p.pH,dz=p.desp.km*p.pD,ma=p.mat.reduce((a,m)=>a+m[1]*m[2],0),b=mo+dz+ma;return{mo,dz,ma,b,iva:b*.21,t:b*1.21}};
@@ -477,6 +478,14 @@ function techTest(s){const p=s.ot.flatMap(o=>o.partes).find(x=>!['Finalizado','F
  s.test={reason:'Visita técnica',note:'',ref:p?p.id:'',origin:'App técnica',by:who,scope:'a',zones:[],types:['1130','1120','1110','1301','1302','1350','arm'],until:new Date(Date.now()+36e5)};
  log(s,1999,'EN PRUEBAS (App técnica · '+who+(p?' · '+p.id:'')+') - Visita técnica - Ámbito: todo el abonado - Hasta '+hm(s.test.until),'APP');
  toast('Pruebas puestas desde la app técnica: '+who);all()}
+function home(){const q=queue(),now=Date.now(),mn=d=>Math.max(0,Math.round((now-d)/6e4)),n=f=>S.filter(f).length,av=[],
+ cards=[['En cola',q.length],['Nuevas sin ver',n(s=>isSig(s)&&!s.vw)],['En gestión',n(s=>s.st==='proc')],['Suspendidas',n(s=>s.st==='susp')],['En pruebas',n(s=>tOn(s))],['Revisiones expiradas',S.reduce((a,s)=>a+s.rev.filter(r=>revSt(s,r)==='Expirada').length,0)]];
+ S.forEach(s=>{if(s.st==='susp'&&s.susp&&s.susp.until&&s.susp.until-now<9e5)av.push([s,'Suspensión vence a las '+hm(s.susp.until)]);
+  if(tOn(s)&&s.test.until-now<18e5)av.push([s,'Pruebas ('+s.test.origin+') caducan a las '+hm(s.test.until)]);
+  s.rev.forEach(r=>{if(revSt(s,r)==='Expirada')av.push([s,'Revisión expirada · '+mtOf(s,r).sis+' · '+r.fecha+(r.ot?'':' · sin orden de trabajo')])})});
+ return`<fieldset><legend>Resumen del turno · ${dmy(new Date())}</legend><div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px'>${cards.map(c=>`<div class='box'><div style='font-size:26px;font-weight:700${c[0]==='En cola'&&c[1]?';color:var(--al)':''}'>${c[1]}</div>${c[0]}</div>`).join('')}</div></fieldset>
+ <fieldset><legend>Cola de alarmas</legend><div class='tw'><table><tr><th>P</th><th>Abonado</th><th>Evento</th><th>Detalle</th><th>Hora</th><th>Espera</th><th>Estado</th><th></th></tr>${q.map(s=>`<tr class='${s.pri<=2?'rS':''}'><td>${s.pri}</td><td>${s.id} - ${esc(s.n)}</td><td>${CODES[s.ev[0]][0]}</td><td>${esc(s.ev[1])}</td><td>${hm(s.at)}</td><td>${mn(s.at)} min</td><td>${ST[s.st]}${s.vw?'':' · nueva'}</td><td><button class='b' data-id='${s.id}'>Abrir</button></td></tr>`).join('')||'<tr><td colspan=8>Sin alarmas pendientes.</td></tr>'}</table></div></fieldset>
+ <fieldset><legend>Avisos</legend>${av.map(a=>`<div style='display:flex;gap:8px;align-items:center;margin-bottom:3px'><span style='flex:1'>${esc(a[0].n)} · ${esc(a[1])}</span><button class='b' data-id='${a[0].id}'>Abrir</button></div>`).join('')||`<p class='hl'>Sin avisos pendientes.</p>`}</fieldset>`}
 function pop(b){const p=$('pop'),it=MENU[b.dataset.m];if(!p.hidden&&p.dataset.o===b.dataset.m){p.hidden=true;return}
  p.innerHTML=it.map(x=>`<button data-a="${x[1]}">${x[0]}</button>`).join('');p.dataset.o=b.dataset.m;p.hidden=false;
  const r=b.getBoundingClientRect();p.style.left=Math.max(0,Math.min(r.left,innerWidth-p.offsetWidth-4))+'px';p.style.top=r.bottom+'px'}
@@ -497,16 +506,16 @@ document.addEventListener('input',e=>{
  if(e.target.id==='q'){qs=e.target.value.toLowerCase();op.add('Resultados');tree()}
  if(e.target.id==='nt')notes=e.target.value});
 setInterval(()=>{$('dt').textContent=dmy(new Date())+' '+hms(new Date());if(PBX.st==='talk'||PBX.st==='hold'){const e=$('pl');if(e)e.textContent=plab()}
- S.forEach(s=>{if(s.st==='susp'&&s.susp&&s.susp.until&&s.susp.until<=Date.now()){unsus(s,'vencida');toast('Suspensión vencida: '+s.n+' vuelve a la cola');all()}})},1000);$('dt').textContent=dmy(new Date())+' '+hms(new Date());
+ S.forEach(s=>{if(s.st==='susp'&&s.susp&&s.susp.until&&s.susp.until<=Date.now()){unsus(s,'vencida');toast('Suspensión vencida: '+s.n+' vuelve a la cola');all()}});if(!cur&&new Date().getSeconds()===0)$('pg').innerHTML=pg()},1000);$('dt').textContent=dmy(new Date())+' '+hms(new Date());
 document.body.classList.remove('tr');
 document.addEventListener('keydown',e=>{
  if($('dlg').open)return;
  if(e.key==='Escape'){$('pop').hidden=true;return}
  if(e.key==='F2'||e.key==='F3'||e.key==='F7'){e.preventDefault();nav={F2:'nav',F3:'notes',F7:'im'}[e.key];document.body.classList[innerWidth<=820?'add':'remove']('tr');tree();return}
  if(!e.altKey)return;
- const c=e.code.replace('Key','').replace('Digit',''),a={N:'next',H:'do',S:'sus',F:'fin',P:'tst',T:'pbx'}[c]||(/^[0-9]$/.test(c)?'p'+(c==='0'?'10':c):null);
+ const c=e.code.replace('Key','').replace('Digit',''),a={N:'next',I:'home',H:'do',S:'sus',F:'fin',P:'tst',T:'pbx'}[c]||(/^[0-9]$/.test(c)?'p'+(c==='0'?'10':c):null);
  if(a){e.preventDefault();act(a)}});
-openC(queue()[0].id);
+all();
 </script>
 </body>
 </html>
